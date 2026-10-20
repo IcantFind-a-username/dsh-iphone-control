@@ -21,7 +21,7 @@ struct RootView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let width = min(330, proxy.size.width * 0.84)
+            let width = min(292, proxy.size.width * 0.76)
             ZStack(alignment: .leading) {
                 content
 
