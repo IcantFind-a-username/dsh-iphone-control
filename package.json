@@ -1,0 +1,25 @@
+{
+  "name": "dsh-pocket",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A pocket-sized, iPhone-first surface for DeepSeek Harness over your own Tailscale tailnet.",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "web"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "keywords": ["dsh", "dsh-plugin", "deepseek-harness", "iphone", "pwa", "tailscale"],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

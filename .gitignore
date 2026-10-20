@@ -1,0 +1,9 @@
+.DS_Store
+ios/build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcscmblueprint
+ios/build-device/
+scripts/local.env
