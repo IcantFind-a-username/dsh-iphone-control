@@ -123,6 +123,54 @@ struct WhaleResponse: Codable, Equatable {
     var updatedAt: Double?
 }
 
+struct ModelSelection: Codable, Equatable {
+    var provider: String
+    var model: String
+    var reasoningEffort: String?
+}
+
+struct ReasoningEffortOption: Codable, Identifiable, Equatable {
+    var id: String
+    var name: String
+}
+
+struct ModelReasoning: Codable, Equatable {
+    var efforts: [ReasoningEffortOption]
+    var defaultEffort: String?
+}
+
+struct ModelEntry: Codable, Identifiable, Equatable {
+    var id: String
+    var name: String
+    var description: String?
+    var reasoning: ModelReasoning?
+}
+
+struct ModelGroup: Codable, Identifiable, Equatable {
+    var id: String
+    var name: String
+    var models: [ModelEntry]
+}
+
+struct ModelFailure: Codable, Equatable {
+    var id: String
+    var name: String
+    var message: String
+}
+
+struct ModelCatalog: Codable, Equatable {
+    var ok: Bool
+    var `default`: ModelSelection?
+    var groups: [ModelGroup]
+    var failures: [ModelFailure]?
+    var current: ModelSelection?
+}
+
+struct SelectModelResponse: Codable {
+    var ok: Bool
+    var selection: ModelSelection?
+}
+
 struct PingResponse: Codable {
     var ok: Bool
     var version: String?

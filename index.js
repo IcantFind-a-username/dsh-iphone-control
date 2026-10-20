@@ -754,6 +754,46 @@ export function apply(ctx, config) {
         return sendJson(res, 200, { ok: true })
       }
 
+      if (api === 'models' && method === 'GET') {
+        const id = url.searchParams.get('id') || ''
+        const catalog = await ctx.sessionController.modelCatalog()
+        let current = catalog.default
+        if (id) {
+          try {
+            const projections = await ctx.sessionController.projections({ sessionId: id }, new AbortController().signal)
+            const selection = projections && projections.values ? projections.values.modelSelection : null
+            const next = selection ? selection.next || selection.lastUsed : null
+            if (next) current = next
+          } catch {
+            /* fall back to the deployment default */
+          }
+        }
+        return sendJson(res, 200, {
+          ok: true,
+          default: catalog.default,
+          groups: catalog.groups,
+          failures: catalog.failures || [],
+          current
+        })
+      }
+
+      if (api === 'model' && method === 'POST') {
+        const body = await readBody(req, 8192)
+        const id = typeof body.id === 'string' ? body.id : ''
+        const provider = typeof body.provider === 'string' ? body.provider : ''
+        const model = typeof body.model === 'string' ? body.model : ''
+        if (!id || !provider || !model) return sendJson(res, 400, { ok: false, error: 'missing id/provider/model' })
+        const result = await ctx.sessionController.selectModel({
+          sessionId: id,
+          provider,
+          model,
+          ...(typeof body.reasoningEffort === 'string' && body.reasoningEffort ? { reasoningEffort: body.reasoningEffort } : {})
+        })
+        // The controller answers `{ selected: {...} }`; flatten it for the app.
+        const selection = result && result.selected ? result.selected : result
+        return sendJson(res, 200, { ok: true, selection })
+      }
+
       if (api === 'image' && method === 'GET') {
         const id = url.searchParams.get('id') || ''
         const ref = url.searchParams.get('ref') || ''

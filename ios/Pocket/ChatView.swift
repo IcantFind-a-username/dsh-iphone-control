@@ -11,6 +11,7 @@ struct ChatView: View {
     @State private var showSessions = false
     @State private var showSetup = false
     @State private var showWhale = ProcessInfo.processInfo.arguments.contains("-whale")
+    @State private var showModels = ProcessInfo.processInfo.arguments.contains("-models")
     @State private var showJump = false
     @State private var scrollTick = 0
     private let forceJump = ProcessInfo.processInfo.arguments.contains("-jump")
@@ -28,6 +29,16 @@ struct ChatView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar { toolbarContent }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 12)
+                    .onEnded { value in
+                        guard value.startLocation.x < 32,
+                              value.translation.width > 70,
+                              abs(value.translation.height) < 90 else { return }
+                        Haptics.tap()
+                        showSessions = true
+                    }
+            )
             .overlay(alignment: .bottomTrailing) {
                 WhalePet(onOpenDetails: { showWhale = true })
                     .environmentObject(model)
@@ -50,6 +61,10 @@ struct ChatView: View {
             }
             .sheet(isPresented: $showSessions) {
                 SessionsSheet()
+                    .environmentObject(model)
+            }
+            .sheet(isPresented: $showModels) {
+                ModelSheet()
                     .environmentObject(model)
             }
             .sheet(isPresented: $showWhale) {
@@ -171,6 +186,32 @@ struct ChatView: View {
 
     private var composer: some View {
         VStack(spacing: 8) {
+            HStack {
+                Button {
+                    Haptics.tap()
+                    showModels = true
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "cpu")
+                            .font(.system(size: 9.5, weight: .semibold))
+                        Text(model.currentModelLabel)
+                            .font(.system(size: 11.5, weight: .medium))
+                            .lineLimit(1)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 7.5, weight: .bold))
+                    }
+                    .foregroundStyle(Theme.dim)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Theme.layer1, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Theme.line))
+                }
+                .buttonStyle(.plain)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 4)
+
             if !images.isEmpty { previews }
 
             HStack(alignment: .bottom, spacing: 7) {

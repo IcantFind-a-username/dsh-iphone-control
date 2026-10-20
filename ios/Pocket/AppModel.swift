@@ -24,6 +24,8 @@ final class AppModel: ObservableObject {
     @Published var sending = false
     @Published var cwd = ""
     @Published var whale: WhaleResponse?
+    @Published var modelCatalog: ModelCatalog?
+    @Published var modelLoading = false
     @Published var whaleLoading = false
 
     private var pollTask: Task<Void, Never>?
@@ -161,6 +163,7 @@ final class AppModel: ObservableObject {
             connectionError = error.localizedDescription
         }
         startPolling()
+        Task { await loadModels() }
     }
 
     // MARK: - Polling
@@ -284,6 +287,50 @@ final class AppModel: ObservableObject {
         } catch {
             return nil
         }
+    }
+
+    func loadModels() async {
+        guard let api else { return }
+        modelLoading = true
+        defer { modelLoading = false }
+        do {
+            let catalog: ModelCatalog = try await api.get("api/models", query: [
+                .init(name: "id", value: sessionId ?? "")
+            ])
+            modelCatalog = catalog
+        } catch {
+            flash(error.localizedDescription)
+        }
+    }
+
+    func selectModel(provider: String, model: String, reasoningEffort: String?) async {
+        guard let sessionId, let api else { return }
+        do {
+            var payload: [String: Any] = ["id": sessionId, "provider": provider, "model": model]
+            if let reasoningEffort { payload["reasoningEffort"] = reasoningEffort }
+            let response: SelectModelResponse = try await api.post("api/model", json: payload)
+            if let selection = response.selection {
+                modelCatalog?.current = selection
+            }
+            Haptics.tap()
+            flash("已切换到 \(modelName(provider: provider, model: model))")
+            await refresh()
+        } catch {
+            flash(error.localizedDescription)
+            Haptics.error()
+        }
+    }
+
+    func modelName(provider: String, model: String) -> String {
+        if let entry = modelCatalog?.groups.first(where: { $0.id == provider })?.models.first(where: { $0.id == model }) {
+            return entry.name
+        }
+        return model
+    }
+
+    var currentModelLabel: String {
+        guard let current = modelCatalog?.current else { return "模型" }
+        return modelName(provider: current.provider, model: current.model)
     }
 
     func loadWhale() async {
