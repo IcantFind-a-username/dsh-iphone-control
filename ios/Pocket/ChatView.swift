@@ -8,7 +8,6 @@ struct ChatView: View {
     @State private var draft = ""
     @State private var images: [UIImage] = []
     @State private var pickerItems: [PhotosPickerItem] = []
-    @State private var showSessions = false
     @State private var showSetup = false
     @State private var showWhale = ProcessInfo.processInfo.arguments.contains("-whale")
     @State private var showModels = ProcessInfo.processInfo.arguments.contains("-models")
@@ -29,16 +28,6 @@ struct ChatView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar { toolbarContent }
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 12)
-                    .onEnded { value in
-                        guard value.startLocation.x < 32,
-                              value.translation.width > 70,
-                              abs(value.translation.height) < 90 else { return }
-                        Haptics.tap()
-                        showSessions = true
-                    }
-            )
             .overlay(alignment: .bottomTrailing) {
                 WhalePet(onOpenDetails: { showWhale = true })
                     .environmentObject(model)
@@ -58,10 +47,6 @@ struct ChatView: View {
                         .padding(.bottom, 96)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
-            }
-            .sheet(isPresented: $showSessions) {
-                SessionsSheet()
-                    .environmentObject(model)
             }
             .sheet(isPresented: $showModels) {
                 ModelSheet()
@@ -327,7 +312,9 @@ struct ChatView: View {
         ToolbarItem(placement: .topBarLeading) {
             Button {
                 Haptics.tap()
-                showSessions = true
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                    model.sidebarOpen = true
+                }
             } label: {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 17, weight: .semibold))

@@ -5,6 +5,7 @@
 <p align="center">
   <img src="docs/ios-chat.png" width="300" alt="iOS app">
   <img src="docs/ios-whale.png" width="300" alt="Whale">
+  <img src="docs/ios-sidebar.png" width="300" alt="Sidebar">
 </p>
 
 ## 能做什么

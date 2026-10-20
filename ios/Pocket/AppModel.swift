@@ -32,6 +32,7 @@ final class AppModel: ObservableObject {
     private var generation = 0
     private var toastTask: Task<Void, Never>?
     @Published var toast: String?
+    @Published var sidebarOpen = false
     private let imageCache = NSCache<NSString, UIImage>()
     private var lastRunning = false
 
