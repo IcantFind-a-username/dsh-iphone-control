@@ -12,6 +12,7 @@ struct ChatView: View {
     @State private var showSetup = false
     @State private var showWhale = ProcessInfo.processInfo.arguments.contains("-whale")
     @State private var showJump = false
+    @State private var scrollTick = 0
     private let forceJump = ProcessInfo.processInfo.arguments.contains("-jump")
     @FocusState private var inputFocused: Bool
 
@@ -149,6 +150,19 @@ struct ChatView: View {
             }
             .onChange(of: model.sessionId) { _, _ in
                 proxy.scrollTo("bottom", anchor: .bottom)
+            }
+            .onChange(of: model.items.count) { _, _ in
+                if !showJump {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        proxy.scrollTo("bottom", anchor: .bottom)
+                    }
+                }
+            }
+            .onChange(of: scrollTick) { _, _ in
+                showJump = false
+                withAnimation(.easeOut(duration: 0.25)) {
+                    proxy.scrollTo("bottom", anchor: .bottom)
+                }
             }
         }
     }
@@ -388,7 +402,7 @@ struct ChatView: View {
         draft = ""
         images = []
         pickerItems = []
-        inputFocused = false
+        scrollTick += 1
         Task { await model.send(text: text, images: payload, mode: model.running ? "steer" : "queue") }
     }
 

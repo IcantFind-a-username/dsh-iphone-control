@@ -89,12 +89,19 @@ fi
 
 # macOS adds com.apple.provenance / FinderInfo to freshly written bundles and
 # codesign refuses them: strip the xattrs and sign the finished product.
-xattr -cr "$APP"
-if [ -f "$ENT" ]; then
-  codesign --force --sign "$HASH" --entitlements "$ENT" --timestamp=none --generate-entitlement-der "$APP"
-else
-  codesign --force --sign "$HASH" --timestamp=none --generate-entitlement-der "$APP"
-fi
+signed=0
+for attempt in 1 2 3; do
+  xattr -cr "$APP"
+  if [ -f "$ENT" ]; then
+    if codesign --force --sign "$HASH" --entitlements "$ENT" --timestamp=none --generate-entitlement-der "$APP"; then signed=1; break; fi
+  elif codesign --force --sign "$HASH" --timestamp=none --generate-entitlement-der "$APP"; then
+    signed=1
+    break
+  fi
+  echo "codesign attempt $attempt failed; retrying" >&2
+  sleep 0.4
+done
+[ "$signed" = 1 ] || { echo "codesign failed after 3 attempts" >&2; exit 1; }
 
 xcrun devicectl device uninstall app --device "$DEVICE_ID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun devicectl device install app --device "$DEVICE_ID" "$APP"

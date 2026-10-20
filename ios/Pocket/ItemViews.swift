@@ -51,7 +51,6 @@ struct UserBubble: View {
                         .font(.system(size: 16))
                         .lineSpacing(3)
                         .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)
                 }
             }
