@@ -16,8 +16,9 @@ struct SidebarView: View {
             footer
         }
         .frame(width: width)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .frame(maxHeight: .infinity, alignment: .top)
         .background(Theme.bg)
+        .clipped()
         .overlay(alignment: .trailing) {
             Rectangle()
                 .fill(Theme.line)
