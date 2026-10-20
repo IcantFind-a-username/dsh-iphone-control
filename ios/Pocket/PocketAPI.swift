@@ -90,6 +90,7 @@ struct PocketAPI {
                 throw PocketError.message(message)
             }
             if http.statusCode == 401 { throw PocketError.message("配对已失效，请在设置里重新配对") }
+            if http.statusCode == 410 { throw PocketError.gone }
             throw PocketError.message("服务器返回 \(http.statusCode)")
         }
         return data

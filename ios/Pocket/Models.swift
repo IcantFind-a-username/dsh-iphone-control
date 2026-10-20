@@ -179,11 +179,13 @@ struct PingResponse: Codable {
 enum PocketError: LocalizedError {
     case message(String)
     case badURL
+    case gone
 
     var errorDescription: String? {
         switch self {
         case .message(let text): return text
         case .badURL: return "服务器地址无效"
+        case .gone: return "这个会话的日志文件已丢失，请新建会话"
         }
     }
 }

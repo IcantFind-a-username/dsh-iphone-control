@@ -526,6 +526,20 @@ function sendFile(res, file, status = 200) {
   res.end(data)
 }
 
+function sessionLogExists(sessionId) {
+  const root = path.join(homeDir(), 'sessions')
+  try {
+    for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue
+      if (fs.existsSync(path.join(root, entry.name, sessionId, 'session.v4.jsonl.zstd'))) return true
+    }
+  } catch {
+    /* unreadable sessions dir: treat as unknown */
+    return true
+  }
+  return false
+}
+
 function sessionTitle(summary) {
   if (!summary || typeof summary !== 'object') return '会话'
   if (summary.blank === true) return '新会话'
@@ -651,15 +665,25 @@ export function apply(ctx, config) {
             updatedAt: typeof item.updatedAt === 'number' ? item.updatedAt : 0,
             blank: item.blank === true
           }))
+          .filter((item) => {
+            // A session whose log file disappeared cannot accept writes any more.
+            // Very fresh sessions may not have flushed their log yet, so keep those.
+            if (Date.now() - item.updatedAt < 60_000) return true
+            return sessionLogExists(item.id)
+          })
         return sendJson(res, 200, { ok: true, items })
       }
 
       if (api === 'session' && method === 'GET') {
         const id = url.searchParams.get('id') || ''
         if (!id) return sendJson(res, 400, { ok: false, error: 'missing id' })
-        const feed = feedFor(id)
         const summary = await ctx.sessionController.inspect(id, new AbortController().signal).catch(() => null)
         if (!summary) return sendJson(res, 404, { ok: false, error: 'session not found' })
+        const hasHistory = Array.isArray(summary.events) && summary.events.length > 0
+        if (hasHistory && !sessionLogExists(id)) {
+          return sendJson(res, 410, { ok: false, code: 'gone', error: '这个会话的日志文件已丢失，请新建一个会话' })
+        }
+        const feed = feedFor(id)
         const view = feed.view()
         if (!view.session.title) {
           const listed = await ctx.sessionController.list({}, new AbortController().signal).catch(() => null)

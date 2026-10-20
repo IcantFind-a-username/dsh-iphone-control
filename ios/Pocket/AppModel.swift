@@ -161,6 +161,16 @@ final class AppModel: ObservableObject {
             connected = true
             connectionError = nil
         } catch {
+            if case PocketError.gone = error {
+                flash("这个会话已失效，已切换到其他会话")
+                await loadSessions()
+                if let next = sessions.first(where: { $0.id != id }) {
+                    await open(next.id)
+                } else {
+                    await newSession()
+                }
+                return
+            }
             connectionError = error.localizedDescription
         }
         startPolling()
