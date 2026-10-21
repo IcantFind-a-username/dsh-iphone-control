@@ -9,7 +9,11 @@ struct ItemRow: View {
         case "u":
             UserBubble(item: item, sessionId: sessionId)
         case "t":
-            ToolCard(item: item)
+            if let ask = item.ask {
+                AskCard(item: item, ask: ask)
+            } else {
+                ToolCard(item: item)
+            }
         case "n":
             NoticeChip(text: item.text ?? "")
         default:
@@ -338,5 +342,84 @@ struct EmptyStateView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 60)
         .onAppear { float = true }
+    }
+}
+
+struct AskCard: View {
+    let item: PocketItem
+    let ask: AskPayload
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "questionmark.bubble")
+                    .font(.system(size: 11, weight: .medium))
+                Text("需要你回答")
+                    .font(.system(size: 11.5, weight: .medium))
+                Spacer(minLength: 0)
+                if item.status == "run" {
+                    Text("等待中")
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(Theme.warn)
+                }
+            }
+            .foregroundStyle(Theme.dim)
+
+            ForEach(Array(ask.questions.enumerated()), id: \.offset) { _, question in
+                VStack(alignment: .leading, spacing: 7) {
+                    if !question.header.isEmpty {
+                        Text(question.header.uppercased())
+                            .font(.system(size: 10, weight: .semibold))
+                            .tracking(0.6)
+                            .foregroundStyle(Theme.dim2)
+                    }
+                    Text(question.question)
+                        .font(.system(size: 14))
+                        .lineSpacing(2)
+                        .foregroundStyle(Theme.fg)
+                    ForEach(Array(question.options.enumerated()), id: \.offset) { _, option in
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: question.multiSelect ? "square" : "circle")
+                                .font(.system(size: 10))
+                                .foregroundStyle(Theme.dim2)
+                                .padding(.top, 3)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(option.label)
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(Theme.fgSoft)
+                                if !option.description.isEmpty {
+                                    Text(option.description)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(Theme.dim2)
+                                }
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(Theme.layer2.opacity(0.55), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                }
+            }
+
+            if item.status == "run" {
+                Text("在电脑上选择后，这里会自动更新")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(Theme.dim2)
+            } else if let result = item.result, !result.isEmpty {
+                Rectangle().fill(Theme.line).frame(height: 1)
+                Text(result)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Theme.dim)
+                    .lineLimit(6)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.layer1, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(item.status == "run" ? Theme.warn.opacity(0.35) : Theme.line)
+        )
     }
 }

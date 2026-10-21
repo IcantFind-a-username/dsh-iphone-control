@@ -122,6 +122,30 @@ const TOOL_LABELS = {
   goal: '目标'
 }
 
+function parseAsk(raw) {
+  let value
+  try {
+    value = typeof raw === 'string' ? JSON.parse(raw) : raw
+  } catch {
+    return null
+  }
+  const list = value && Array.isArray(value.questions) ? value.questions : []
+  if (list.length === 0) return null
+  return {
+    questions: list.slice(0, 4).map((question) => ({
+      header: typeof question.header === 'string' ? question.header : '',
+      question: typeof question.question === 'string' ? question.question : '',
+      multiSelect: question.multiSelect === true,
+      options: Array.isArray(question.options)
+        ? question.options.slice(0, 8).map((option) => ({
+            label: typeof option.label === 'string' ? option.label : '',
+            description: typeof option.description === 'string' ? option.description : ''
+          }))
+        : []
+    }))
+  }
+}
+
 function textOfContent(content) {
   if (!Array.isArray(content)) return ''
   const out = []
@@ -209,6 +233,8 @@ class Feed {
     this.title = ''
     this.lastUsed = Date.now()
     this.stepStart = null
+    this.context = null
+    this.contextAt = 0
     this.controller = null
     this.started = false
     this.oldestSeq = null
@@ -381,7 +407,7 @@ class Feed {
       case 'tool/call': {
         const callId = String(data.callId || `c${seq}`)
         const toolName = String(data.name || 'tool')
-        this.upsert({
+        const item = {
           id: `c${callId}`,
           k: 't',
           seq,
@@ -393,7 +419,12 @@ class Feed {
           status: 'run',
           result: '',
           isError: false
-        })
+        }
+        if (toolName === 'ask_user_question') {
+          item.ask = parseAsk(data.arguments)
+          item.detail = ''
+        }
+        this.upsert(item)
         return
       }
       case 'tool/result': {
@@ -467,6 +498,7 @@ class Feed {
       live: this.live,
       hasMore: this.hasMore && this.items.length === 0 ? true : this.hasMore,
       oldestSeq: typeof oldest === 'number' ? Math.floor(oldest) : null,
+      context: this.context,
       items: this.items.map(({ rev, ...rest }) => rest)
     }
   }
@@ -570,6 +602,23 @@ export function apply(ctx, config) {
       if (key === COOKIE && rest.length && safeEqual(rest.join('='), digest)) return true
     }
     return false
+  }
+
+  const refreshContext = async (feed, sessionId) => {
+    if (Date.now() - feed.contextAt < 4000) return
+    feed.contextAt = Date.now()
+    try {
+      const projections = await ctx.sessionController.projections({ sessionId }, new AbortController().signal)
+      const values = projections && projections.values ? projections.values : {}
+      const pressure = values.contextPressure
+      if (pressure) {
+        const used = Number(pressure.projectedTokens ?? pressure.pressureTokens ?? 0)
+        const window = Number(pressure.contextWindow ?? 0)
+        feed.context = { used, window, ratio: window > 0 ? Math.min(1, used / window) : null }
+      }
+    } catch {
+      /* projections are optional */
+    }
   }
 
   const feedFor = (sessionId) => {
@@ -684,6 +733,7 @@ export function apply(ctx, config) {
           return sendJson(res, 410, { ok: false, code: 'gone', error: '这个会话的日志文件已丢失，请新建一个会话' })
         }
         const feed = feedFor(id)
+        await refreshContext(feed, id)
         const view = feed.view()
         if (!view.session.title) {
           const listed = await ctx.sessionController.list({}, new AbortController().signal).catch(() => null)
@@ -703,12 +753,14 @@ export function apply(ctx, config) {
         const after = Number(url.searchParams.get('after') || '-1')
         if (!id) return sendJson(res, 400, { ok: false, error: 'missing id' })
         const feed = feedFor(id)
+        await refreshContext(feed, id)
         return sendJson(res, 200, {
           ok: true,
           rev: feed.rev,
           running: feed.running,
           live: feed.live,
           title: feed.title,
+          context: feed.context,
           items: feed.changedSince(after)
         })
       }

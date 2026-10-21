@@ -19,6 +19,28 @@ struct PocketUsage: Codable, Equatable {
     var cacheRate: Double?
 }
 
+struct AskOption: Codable, Equatable {
+    var label: String
+    var description: String
+}
+
+struct AskQuestion: Codable, Equatable {
+    var header: String
+    var question: String
+    var multiSelect: Bool
+    var options: [AskOption]
+}
+
+struct AskPayload: Codable, Equatable {
+    var questions: [AskQuestion]
+}
+
+struct ContextUsage: Codable, Equatable {
+    var used: Int?
+    var window: Int?
+    var ratio: Double?
+}
+
 struct PocketItem: Codable, Identifiable, Equatable {
     var id: String
     var k: String
@@ -35,6 +57,7 @@ struct PocketItem: Codable, Identifiable, Equatable {
     var result: String?
     var isError: Bool?
     var usage: PocketUsage?
+    var ask: AskPayload?
 
     var time: Date? {
         guard let t else { return nil }
@@ -78,6 +101,7 @@ struct FeedResponse: Codable {
     var hasMore: Bool?
     var oldestSeq: Int?
     var title: String?
+    var context: ContextUsage?
     var items: [PocketItem]
 }
 

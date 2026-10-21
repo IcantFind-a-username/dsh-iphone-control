@@ -13,6 +13,7 @@ struct ChatView: View {
     @State private var showModels = ProcessInfo.processInfo.arguments.contains("-models")
     @State private var showJump = false
     @State private var scrollTick = 0
+    @State private var scrollPosition = ScrollPosition(edge: .bottom)
     private let forceJump = ProcessInfo.processInfo.arguments.contains("-jump")
     @FocusState private var inputFocused: Bool
 
@@ -31,7 +32,7 @@ struct ChatView: View {
             .overlay(alignment: .bottomTrailing) {
                 WhalePet(onOpenDetails: { showWhale = true })
                     .environmentObject(model)
-                    .padding(.bottom, 76)
+                    .padding(.bottom, 108)
             }
             .overlay(alignment: .top) { errorBanner }
             .overlay(alignment: .bottom) {
@@ -66,8 +67,7 @@ struct ChatView: View {
     // MARK: - Transcript
 
     private var transcript: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
+        ScrollView {
                 LazyVStack(alignment: .leading, spacing: 16) {
                     if model.hasMore {
                         Button {
@@ -112,8 +112,7 @@ struct ChatView: View {
                 .padding(.top, 10)
                 .padding(.bottom, 10)
             }
-            .defaultScrollAnchor(.bottom)
-            .defaultScrollAnchor(.bottom, for: .sizeChanges)
+            .scrollPosition($scrollPosition)
             .scrollDismissesKeyboard(.interactively)
             .onScrollGeometryChange(for: Bool.self) { geometry in
                 let distance = geometry.contentSize.height - geometry.contentOffset.y - geometry.containerSize.height
@@ -126,7 +125,7 @@ struct ChatView: View {
                     Button {
                         Haptics.tap()
                         withAnimation(.easeOut(duration: 0.3)) {
-                            proxy.scrollTo("bottom", anchor: .bottom)
+                            scrollPosition.scrollTo(edge: .bottom)
                         }
                         showJump = false
                     } label: {
@@ -149,22 +148,29 @@ struct ChatView: View {
                 }
             }
             .onChange(of: model.sessionId) { _, _ in
-                proxy.scrollTo("bottom", anchor: .bottom)
+                scrollPosition.scrollTo(edge: .bottom)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    scrollPosition.scrollTo(edge: .bottom)
+                }
             }
             .onChange(of: model.items.count) { _, _ in
-                if !showJump {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        proxy.scrollTo("bottom", anchor: .bottom)
+                guard !showJump else { return }
+                withAnimation(.easeOut(duration: 0.2)) {
+                    scrollPosition.scrollTo(edge: .bottom)
+                }
+                // Lazy content needs a second pass before its final height is known.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    if !showJump {
+                        scrollPosition.scrollTo(edge: .bottom)
                     }
                 }
             }
             .onChange(of: scrollTick) { _, _ in
                 showJump = false
                 withAnimation(.easeOut(duration: 0.25)) {
-                    proxy.scrollTo("bottom", anchor: .bottom)
+                    scrollPosition.scrollTo(edge: .bottom)
                 }
             }
-        }
     }
 
     // MARK: - Composer
@@ -194,6 +200,19 @@ struct ChatView: View {
                 .buttonStyle(.plain)
 
                 Spacer(minLength: 0)
+
+                if let context = model.context, let ratio = context.ratio, (context.window ?? 0) > 0 {
+                    HStack(spacing: 5) {
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Theme.layer2).frame(width: 34, height: 3)
+                            Capsule().fill(contextColor(ratio)).frame(width: max(2, 34 * ratio), height: 3)
+                        }
+                        Text("\(Int((ratio * 100).rounded()))%")
+                            .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(contextColor(ratio))
+                    }
+                }
             }
             .padding(.horizontal, 4)
 
@@ -263,7 +282,11 @@ struct ChatView: View {
         .padding(.bottom, 4)
         .background(
             LinearGradient(
-                colors: [Theme.bg.opacity(0.0), Theme.bg.opacity(0.86), Theme.bg],
+                stops: [
+                    .init(color: Theme.bg.opacity(0), location: 0),
+                    .init(color: Theme.bg.opacity(0.92), location: 0.10),
+                    .init(color: Theme.bg, location: 0.26)
+                ],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -403,6 +426,12 @@ struct ChatView: View {
             .padding(.top, 4)
             .transition(.move(edge: .top).combined(with: .opacity))
         }
+    }
+
+    private func contextColor(_ ratio: Double) -> Color {
+        if ratio >= 0.9 { return Theme.err }
+        if ratio >= 0.75 { return Theme.warn }
+        return Theme.dim
     }
 
     private var statusKind: StatusDot.Kind {

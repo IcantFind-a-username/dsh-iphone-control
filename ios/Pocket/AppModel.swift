@@ -24,6 +24,7 @@ final class AppModel: ObservableObject {
     @Published var sending = false
     @Published var cwd = ""
     @Published var whale: WhaleResponse?
+    @Published var context: ContextUsage?
     @Published var modelCatalog: ModelCatalog?
     @Published var modelLoading = false
     @Published var whaleLoading = false
@@ -158,6 +159,7 @@ final class AppModel: ObservableObject {
             liveThink = feed.live?.think ?? ""
             hasMore = feed.hasMore ?? false
             oldestSeq = feed.oldestSeq.map(Double.init)
+            context = feed.context
             connected = true
             connectionError = nil
         } catch {
@@ -208,6 +210,7 @@ final class AppModel: ObservableObject {
             running = feed.running
             liveText = feed.live?.text ?? ""
             liveThink = feed.live?.think ?? ""
+            context = feed.context
             if let feedTitle = feed.title, !feedTitle.isEmpty { title = feedTitle }
             connected = true
             connectionError = nil
