@@ -1,5 +1,8 @@
 # Pocket · dsh-iphone-control
 
+> **Unofficial community plugin. Not affiliated with or endorsed by DeepSeek.**
+> 非官方社区插件，与 DeepSeek 无关联，亦未获其认可。
+
 把 [DeepSeek Harness](https://www.deepseek.com/harness/) 装进口袋：一个 **iPhone 原生 App** 加一个 **手机端 Web UI**，都通过你自己的 Tailscale 网络直连电脑上的 DSH。不开公网端口，不经过任何第三方中转。
 
 <p align="center">
