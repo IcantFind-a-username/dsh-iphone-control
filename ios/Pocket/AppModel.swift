@@ -26,6 +26,7 @@ final class AppModel: ObservableObject {
     @Published var whale: WhaleResponse?
     @Published var context: ContextUsage?
     @Published var modelCatalog: ModelCatalog?
+    @Published var permissions: PermissionCatalog?
     @Published var modelLoading = false
     @Published var whaleLoading = false
 
@@ -177,6 +178,7 @@ final class AppModel: ObservableObject {
         }
         startPolling()
         Task { await loadModels() }
+        Task { await loadPermissions() }
     }
 
     // MARK: - Polling
@@ -301,6 +303,49 @@ final class AppModel: ObservableObject {
         } catch {
             return nil
         }
+    }
+
+    func loadPermissions() async {
+        guard let api, let sessionId else { return }
+        do {
+            let catalog: PermissionCatalog = try await api.get("api/permissions", query: [.init(name: "id", value: sessionId)])
+            permissions = catalog
+        } catch {
+            /* optional */
+        }
+    }
+
+    func selectPermission(_ value: String) async {
+        guard let api, let sessionId else { return }
+        do {
+            let response: PermissionResponse = try await api.post("api/permission", json: [
+                "id": sessionId, "preset": value
+            ])
+            if response.ok {
+                permissions?.current = response.current ?? value
+                Haptics.tap()
+                flash("权限已切换为\(permissionLabel(value))")
+            } else {
+                flash(response.error ?? "切换失败")
+            }
+        } catch {
+            flash(error.localizedDescription)
+        }
+    }
+
+    func permissionLabel(_ value: String) -> String {
+        switch value {
+        case "read-only": return "只读"
+        case "workspace-write": return "工作区可写"
+        case "danger-full-access": return "完全访问"
+        case "custom": return "自定义"
+        default: return value
+        }
+    }
+
+    var currentPermissionLabel: String {
+        guard let value = permissions?.current, !value.isEmpty else { return "权限" }
+        return permissionLabel(value)
     }
 
     func loadModels() async {

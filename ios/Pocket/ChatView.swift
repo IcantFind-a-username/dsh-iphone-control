@@ -11,6 +11,7 @@ struct ChatView: View {
     @State private var showSetup = false
     @State private var showWhale = ProcessInfo.processInfo.arguments.contains("-whale")
     @State private var showModels = ProcessInfo.processInfo.arguments.contains("-models")
+    @State private var showPermissions = ProcessInfo.processInfo.arguments.contains("-permissions")
     @State private var showJump = false
     @State private var scrollTick = 0
     @State private var scrollPosition = ScrollPosition(edge: .bottom)
@@ -51,6 +52,10 @@ struct ChatView: View {
             }
             .sheet(isPresented: $showModels) {
                 ModelSheet()
+                    .environmentObject(model)
+            }
+            .sheet(isPresented: $showPermissions) {
+                PermissionSheet()
                     .environmentObject(model)
             }
             .sheet(isPresented: $showWhale) {
@@ -190,6 +195,25 @@ struct ChatView: View {
                             .lineLimit(1)
                         Image(systemName: "chevron.down")
                             .font(.system(size: 7.5, weight: .bold))
+                    }
+                    .foregroundStyle(Theme.dim)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Theme.layer1, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Theme.line))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    Haptics.tap()
+                    showPermissions = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "lock.shield")
+                            .font(.system(size: 9.5, weight: .semibold))
+                        Text(model.currentPermissionLabel)
+                            .font(.system(size: 11.5, weight: .medium))
+                            .lineLimit(1)
                     }
                     .foregroundStyle(Theme.dim)
                     .padding(.horizontal, 10)

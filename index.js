@@ -19,7 +19,7 @@ import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
 export const name = 'dsh-pocket'
-export const inject = ['webServer', 'sessionController']
+export const inject = ['webServer', 'sessionController', 'agents', 'sessions']
 
 const PREFIX = '/pocket'
 const WEB_DIR = fileURLToPath(new URL('./web/', import.meta.url))
@@ -828,6 +828,39 @@ export function apply(ctx, config) {
         if (!id) return sendJson(res, 400, { ok: false, error: 'missing id' })
         ctx.sessionController.cancel({ sessionId: id })
         return sendJson(res, 200, { ok: true })
+      }
+
+      if (api === 'permissions' && method === 'GET') {
+        const id = url.searchParams.get('id') || ''
+        const permissions = ctx.get('permissionPresets')
+        if (!permissions) return sendJson(res, 200, { ok: false, error: '这个 profile 没有权限预设' })
+        const catalog = permissions.catalog()
+        let current = null
+        try {
+          const session = ctx.sessions.get(id)
+          if (session) current = permissions.current(session)
+        } catch {
+          /* cold session: no current value yet */
+        }
+        return sendJson(res, 200, { ok: true, current, ...catalog })
+      }
+
+      if (api === 'permission' && method === 'POST') {
+        const body = await readBody(req, 4096)
+        const id = typeof body.id === 'string' ? body.id : ''
+        const preset = typeof body.preset === 'string' ? body.preset : ''
+        if (!id || !preset) return sendJson(res, 400, { ok: false, error: 'missing id or preset' })
+        const permissions = ctx.get('permissionPresets')
+        const approval = ctx.get('approval')
+        const agent = ctx.agents.get(id)
+        if (!permissions || !approval) return sendJson(res, 409, { ok: false, error: '这个 profile 没有权限预设' })
+        if (!agent) return sendJson(res, 409, { ok: false, error: '会话还没激活：先发一条消息，再改权限' })
+        try {
+          permissions.apply(agent.session, preset, (policy) => approval.setPolicy(agent, policy))
+        } catch (error) {
+          return sendJson(res, 400, { ok: false, error: String((error && error.message) || error) })
+        }
+        return sendJson(res, 200, { ok: true, current: permissions.current(agent.session) })
       }
 
       if (api === 'models' && method === 'GET') {

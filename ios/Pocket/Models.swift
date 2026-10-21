@@ -147,6 +147,25 @@ struct WhaleResponse: Codable, Equatable {
     var updatedAt: Double?
 }
 
+struct PermissionOption: Codable, Identifiable, Equatable {
+    var value: String
+    var name: String
+    var id: String { value }
+}
+
+struct PermissionCatalog: Codable, Equatable {
+    var ok: Bool
+    var current: String?
+    var options: [PermissionOption]
+    var defaultPreset: String?
+}
+
+struct PermissionResponse: Codable {
+    var ok: Bool
+    var current: String?
+    var error: String?
+}
+
 struct ModelSelection: Codable, Equatable {
     var provider: String
     var model: String
