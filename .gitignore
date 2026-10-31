@@ -7,3 +7,4 @@ xcuserdata/
 *.xcscmblueprint
 ios/build-device/
 scripts/local.env
+ios/build2/

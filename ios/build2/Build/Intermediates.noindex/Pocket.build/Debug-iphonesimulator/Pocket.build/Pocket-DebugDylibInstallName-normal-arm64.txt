@@ -1,1 +1,0 @@
-@rpath/Pocket.debug.dylib
