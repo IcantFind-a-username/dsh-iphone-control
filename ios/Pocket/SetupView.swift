@@ -26,6 +26,29 @@ struct SetupView: View {
                         hero
                     }
 
+                    if model.hasBiometricKey {
+                        Button {
+                            busy = true
+                            Task {
+                                let ok = await model.biometricUnlock()
+                                busy = false
+                                if ok, mode == .settings { dismiss() }
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "faceid")
+                                    .font(.system(size: 18))
+                                Text("用 Face ID 解锁")
+                                    .font(.system(size: 15.5, weight: .semibold))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Theme.primary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .foregroundStyle(Theme.primaryText)
+                        }
+                        .disabled(busy)
+                    }
+
                     VStack(alignment: .leading, spacing: 8) {
                         label("服务器地址")
                         TextField("http://100.x.y.z:8931/pocket", text: $base)

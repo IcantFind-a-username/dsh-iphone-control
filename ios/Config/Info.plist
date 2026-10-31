@@ -41,6 +41,8 @@
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>连接你电脑上的 DeepSeek Harness。</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>用 Face ID 解锁 Pocket 并确认这台设备。</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>选择照片发送给 Agent。</string>
 	<key>NSCameraUsageDescription</key>

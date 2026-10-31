@@ -26,6 +26,16 @@
     "swift-dependencies" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/AttachmentImage.swiftdeps",
     "swiftmodule" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/AttachmentImage~partial.swiftmodule"
   },
+  "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/Pocket/BiometricKey.swift" : {
+    "const-values" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/BiometricKey.swiftconstvalues",
+    "dependencies" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/BiometricKey.d",
+    "diagnostics" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/BiometricKey.dia",
+    "index-unit-output-path" : "/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/BiometricKey.o",
+    "llvm-bc" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/BiometricKey.bc",
+    "object" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/BiometricKey.o",
+    "swift-dependencies" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/BiometricKey.swiftdeps",
+    "swiftmodule" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/BiometricKey~partial.swiftmodule"
+  },
   "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/Pocket/ChatView.swift" : {
     "const-values" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/ChatView.swiftconstvalues",
     "dependencies" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/ChatView.d",

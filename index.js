@@ -605,14 +605,26 @@ function deviceKey(token) {
   return crypto.createHash('sha256').update(String(token)).digest('hex')
 }
 
-function mintDevice(state, label) {
+function mintDevice(state, label, publicKey) {
   const token = crypto.randomBytes(24).toString('hex')
-  state.devices[deviceKey(token)] = {
+  const id = crypto.randomBytes(12).toString('hex')
+  state.devices[id] = {
     label: String(label || 'device').slice(0, 40),
     createdAt: Date.now(),
-    lastSeen: Date.now()
+    lastSeen: Date.now(),
+    tokenHash: tokenDigest(token),
+    ...(publicKey ? { publicKey } : {})
   }
-  return token
+  return { id, token }
+}
+
+function deviceByToken(state, token) {
+  if (!token) return null
+  const hash = tokenDigest(token)
+  for (const [id, device] of Object.entries(state.devices)) {
+    if (device && device.tokenHash === hash) return { id, device }
+  }
+  return null
 }
 
 /* ------------------------------------------------------------------ routes */
@@ -737,9 +749,9 @@ export function apply(ctx, config) {
     })()
 
     if (header) {
-      const key = deviceKey(header)
-      if (state.devices[key]) {
-        state.devices[key].lastSeen = Date.now()
+      const found = deviceByToken(state, header)
+      if (found) {
+        found.device.lastSeen = Date.now()
         return true
       }
       if (safeEqual(tokenDigest(header), digest)) {
@@ -914,13 +926,76 @@ code{display:block;font-family:ui-monospace,Menlo,monospace;font-size:17px;lette
         if (totpEnabled() && !verifyTotp(state.totp.secret, code)) {
           return sendJson(res, 401, { ok: false, error: '验证码不正确或已过期' })
         }
-        const deviceToken = mintDevice(state, body.label)
+        const minted = mintDevice(state, body.label)
         saveState(state)
         return sendJson(res, 200, {
           ok: true,
-          deviceToken,
+          deviceId: minted.id,
+          deviceToken: minted.token,
           totp: totpEnabled()
         })
+      }
+
+      if (pathname === `${PREFIX}/api/enroll` && method === 'POST') {
+        const body = await readBody(req, 8192)
+        const token = typeof body.token === 'string' ? body.token : ''
+        const code = typeof body.code === 'string' ? body.code : ''
+        const publicKey = typeof body.publicKey === 'string' ? body.publicKey : ''
+        if (!token || !safeEqual(tokenDigest(token), digest)) {
+          return sendJson(res, 401, { ok: false, error: '配对令牌不正确' })
+        }
+        if (totpEnabled() && !verifyTotp(state.totp.secret, code)) {
+          return sendJson(res, 401, { ok: false, error: '验证码不正确或已过期' })
+        }
+        if (!publicKey) return sendJson(res, 400, { ok: false, error: 'missing publicKey' })
+        try {
+          crypto.createPublicKey({ key: Buffer.from(publicKey, 'base64'), format: 'der', type: 'spki' })
+        } catch {
+          return sendJson(res, 400, { ok: false, error: '公钥格式不正确' })
+        }
+        const minted = mintDevice(state, body.label, publicKey)
+        saveState(state)
+        return sendJson(res, 200, { ok: true, deviceId: minted.id, deviceToken: minted.token, keyed: true })
+      }
+
+      if (pathname === `${PREFIX}/api/challenge` && method === 'POST') {
+        const body = await readBody(req, 4096)
+        const deviceId = typeof body.deviceId === 'string' ? body.deviceId : ''
+        const record = state.devices[deviceId]
+        if (!record || !record.publicKey) return sendJson(res, 404, { ok: false, error: '这台设备没有注册密钥' })
+        const nonce = crypto.randomBytes(32).toString('hex')
+        record.nonce = nonce
+        record.nonceAt = Date.now()
+        saveState(state)
+        return sendJson(res, 200, { ok: true, nonce })
+      }
+
+      if (pathname === `${PREFIX}/api/verify` && method === 'POST') {
+        const body = await readBody(req, 4096)
+        const deviceId = typeof body.deviceId === 'string' ? body.deviceId : ''
+        const signature = typeof body.signature === 'string' ? body.signature : ''
+        const record = state.devices[deviceId]
+        if (!record || !record.publicKey) return sendJson(res, 404, { ok: false, error: '这台设备没有注册密钥' })
+        if (!record.nonce || Date.now() - (record.nonceAt || 0) > 120_000) {
+          return sendJson(res, 401, { ok: false, error: '挑战已过期，请重试' })
+        }
+        const nonce = record.nonce
+        delete record.nonce
+        delete record.nonceAt
+        let valid = false
+        try {
+          const key = crypto.createPublicKey({ key: Buffer.from(record.publicKey, 'base64'), format: 'der', type: 'spki' })
+          valid = crypto.verify('sha256', Buffer.from(nonce), { key, dsaEncoding: 'der' }, Buffer.from(signature, 'base64'))
+        } catch {
+          valid = false
+        }
+        saveState(state)
+        if (!valid) return sendJson(res, 401, { ok: false, error: 'Face ID 校验失败' })
+        record.lastSeen = Date.now()
+        const minted = mintDevice(state, record.label)
+        record.tokenHash = minted.tokenHash
+        saveState(state)
+        return sendJson(res, 200, { ok: true, deviceId, deviceToken: minted.token })
       }
 
       if (!pathname.startsWith(`${PREFIX}/api/`)) return sendJson(res, 404, { ok: false, error: 'not found' })
@@ -1068,6 +1143,12 @@ code{display:block;font-family:ui-monospace,Menlo,monospace;font-size:17px;lette
         if (!id) return sendJson(res, 400, { ok: false, error: 'missing id' })
         ctx.sessionController.cancel({ sessionId: id })
         return sendJson(res, 200, { ok: true })
+      }
+
+      if (api === 'totp-off' && method === 'POST') {
+        state.totp = null
+        saveState(state)
+        return sendJson(res, 200, { ok: true, totp: false })
       }
 
       if (api === 'delete-session' && method === 'POST') {

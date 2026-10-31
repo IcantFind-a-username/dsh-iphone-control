@@ -155,8 +155,16 @@ struct PairInfo: Codable {
 
 struct PairResponse: Codable {
     var ok: Bool
+    var deviceId: String?
     var deviceToken: String?
     var totp: Bool?
+    var keyed: Bool?
+    var error: String?
+}
+
+struct ChallengeResponse: Codable {
+    var ok: Bool
+    var nonce: String?
     var error: String?
 }
 

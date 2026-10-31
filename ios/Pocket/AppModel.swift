@@ -6,6 +6,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var baseURL: String
     @Published private(set) var token: String
     @Published private(set) var deviceToken: String
+    @Published private(set) var deviceId: String
 
     @Published var sessionId: String?
     @Published var title = "Pocket"
@@ -43,6 +44,36 @@ final class AppModel: ObservableObject {
         baseURL = UserDefaults.standard.string(forKey: "pocket.base") ?? PocketDefaults.baseURL
         token = UserDefaults.standard.string(forKey: "pocket.token") ?? PocketDefaults.token
         deviceToken = UserDefaults.standard.string(forKey: "pocket.device") ?? ""
+        deviceId = UserDefaults.standard.string(forKey: "pocket.deviceId") ?? ""
+    }
+
+    /// True when this phone holds a Secure Enclave key for the server.
+    var hasBiometricKey: Bool {
+        !deviceId.isEmpty && BiometricKey.load() != nil
+    }
+
+    /// Re-auth with Face ID: challenge → sign in the Secure Enclave → device token.
+    @discardableResult
+    func biometricUnlock() async -> Bool {
+        guard let api, !deviceId.isEmpty, let key = BiometricKey.load() else { return false }
+        do {
+            let challenge: ChallengeResponse = try await api.post("api/challenge", json: ["deviceId": deviceId])
+            guard let nonce = challenge.nonce else { return false }
+            let signature = try BiometricKey.sign(key, nonce)
+            let verified: PairResponse = try await api.post("api/verify", json: ["deviceId": deviceId, "signature": signature])
+            guard let token = verified.deviceToken, !token.isEmpty else {
+                flash(verified.error ?? "Face ID 校验失败")
+                return false
+            }
+            deviceToken = token
+            UserDefaults.standard.set(token, forKey: "pocket.device")
+            connectionError = nil
+            await start()
+            return true
+        } catch {
+            flash(error.localizedDescription)
+            return false
+        }
     }
 
     var paired: Bool { api != nil && !token.isEmpty }
@@ -75,7 +106,20 @@ final class AppModel: ObservableObject {
                 }
                 payload["code"] = trimmedCode
             }
-            let response: PairResponse = try await candidate.post("api/pair", json: payload)
+            // Prefer a Secure Enclave key: after this enrollment every re-pair is a
+            // Face ID signature instead of a 6-digit code.
+            var keyed = false
+            if BiometricKey.available {
+                do {
+                    let existingKey = BiometricKey.load()
+                    let key = try existingKey ?? BiometricKey.create()
+                    payload["publicKey"] = BiometricKey.publicKeyBase64(key)
+                    keyed = true
+                } catch {
+                    keyed = false
+                }
+            }
+            let response: PairResponse = try await candidate.post(keyed ? "api/enroll" : "api/pair", json: payload)
             guard let deviceToken = response.deviceToken, !deviceToken.isEmpty else {
                 connectionError = response.error ?? "配对失败"
                 return false
@@ -83,6 +127,10 @@ final class AppModel: ObservableObject {
             self.baseURL = base.trimmingCharacters(in: .whitespacesAndNewlines)
             self.token = token.trimmingCharacters(in: .whitespacesAndNewlines)
             self.deviceToken = deviceToken
+            if let newId = response.deviceId, !newId.isEmpty {
+                self.deviceId = newId
+                UserDefaults.standard.set(newId, forKey: "pocket.deviceId")
+            }
             UserDefaults.standard.set(self.baseURL, forKey: "pocket.base")
             UserDefaults.standard.set(self.token, forKey: "pocket.token")
             UserDefaults.standard.set(self.deviceToken, forKey: "pocket.device")
