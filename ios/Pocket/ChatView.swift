@@ -35,6 +35,8 @@ struct ChatView: View {
                 WhalePet(onOpenDetails: { showWhale = true })
                     .environmentObject(model)
                     .padding(.bottom, 108)
+                    .opacity(showJump ? 0 : 1)
+                    .animation(.easeInOut(duration: 0.2), value: showJump)
             }
             .overlay(alignment: .top) { errorBanner }
             .overlay(alignment: .bottom) {
@@ -76,9 +78,41 @@ struct ChatView: View {
 
     // MARK: - Transcript
 
+    private enum DisplayRow: Identifiable {
+        case single(PocketItem)
+        case activity([PocketItem])
+
+        var id: String {
+            switch self {
+            case .single(let item): return item.id
+            case .activity(let items): return "act-\(items.first?.id ?? "x")"
+            }
+        }
+    }
+
+    private var displayRows: [DisplayRow] {
+        var rows: [DisplayRow] = []
+        var bucket: [PocketItem] = []
+        func flush() {
+            guard !bucket.isEmpty else { return }
+            rows.append(bucket.count == 1 ? .single(bucket[0]) : .activity(bucket))
+            bucket.removeAll()
+        }
+        for item in model.items {
+            if item.k == "t", item.ask == nil {
+                bucket.append(item)
+            } else {
+                flush()
+                rows.append(.single(item))
+            }
+        }
+        flush()
+        return rows
+    }
+
     private var transcript: some View {
         ScrollView {
-                LazyVStack(alignment: .leading, spacing: 22) {
+                LazyVStack(alignment: .leading, spacing: 26) {
                     if model.hasMore {
                         Button {
                             Task { await model.loadOlder() }
@@ -99,9 +133,15 @@ struct ChatView: View {
                         EmptyStateView()
                     }
 
-                    ForEach(model.items) { item in
-                        ItemRow(item: item, sessionId: model.sessionId ?? "")
-                            .id(item.id)
+                    ForEach(displayRows) { row in
+                        switch row {
+                        case .single(let item):
+                            ItemRow(item: item, sessionId: model.sessionId ?? "")
+                                .id(item.id)
+                        case .activity(let items):
+                            ActivityRow(items: items)
+                                .id(row.id)
+                        }
                     }
 
                     if let pending = model.pendingText {

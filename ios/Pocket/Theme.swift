@@ -16,16 +16,17 @@ extension Color {
 
 enum Theme {
     // three surfaces, no borders — depth comes from tone, not strokes
-    static let bg = Color(hex: 0x0F0F10)
-    static let layer1 = Color(hex: 0x171719)
-    static let layer2 = Color(hex: 0x1F1F22)
-    static let layer3 = Color(hex: 0x2A2A2D)
+    // warm charcoal, not pure black: reads softer and less "dashboard"
+    static let bg = Color(hex: 0x121110)
+    static let layer1 = Color(hex: 0x1A1917)
+    static let layer2 = Color(hex: 0x24221F)
+    static let layer3 = Color(hex: 0x2E2B27)
 
     // labels: three levels only
-    static let fg = Color(hex: 0xF5F5F7)
-    static let fgSoft = Color(hex: 0xC7C7CC)
-    static let dim = Color(hex: 0xA1A1A6)
-    static let dim2 = Color(hex: 0x6E6E73)
+    static let fg = Color(hex: 0xF2EFE9)
+    static let fgSoft = Color(hex: 0xD6D1C8)
+    static let dim = Color(hex: 0xA8A29A)
+    static let dim2 = Color(hex: 0x7A756D)
 
     // kept for the few places that still need a hairline
     static let line = Color.white.opacity(0.05)
@@ -39,10 +40,10 @@ enum Theme {
     static let controlRadius: CGFloat = 12
 
     // accent + status
-    static let accent = Color(hex: 0x3B82F6)
-    static let ok = Color(hex: 0x4ED17E)
-    static let warn = Color(hex: 0xF5A623)
-    static let err = Color(hex: 0xF25A5A)
+    static let accent = Color(hex: 0xD9A05B)
+    static let ok = Color(hex: 0x8FBF8A)
+    static let warn = Color(hex: 0xD9A05B)
+    static let err = Color(hex: 0xE07A6A)
 
     // surfaces
     static let bubble = Color(hex: 0x2C2C2E)    // --dsw-specific-bubble (dark)

@@ -204,7 +204,7 @@ struct MarkdownView: View {
                 case .paragraph(let text):
                     Text(MarkdownParser.inline(text))
                         .font(.system(size: size))
-                        .lineSpacing(3.5)
+                        .lineSpacing(5)
                         .foregroundStyle(Theme.fg)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)
@@ -226,7 +226,7 @@ struct MarkdownView: View {
                                 Text("•").font(.system(size: size)).foregroundStyle(Theme.dim)
                                 Text(MarkdownParser.inline(item))
                                     .font(.system(size: size))
-                                    .lineSpacing(3)
+                                    .lineSpacing(5)
                                     .foregroundStyle(Theme.fg)
                                     .textSelection(.enabled)
                             }
@@ -240,7 +240,7 @@ struct MarkdownView: View {
                                 Text("\(offset + 1).").font(.system(size: size - 1, design: .rounded)).foregroundStyle(Theme.dim)
                                 Text(MarkdownParser.inline(item))
                                     .font(.system(size: size))
-                                    .lineSpacing(3)
+                                    .lineSpacing(5)
                                     .foregroundStyle(Theme.fg)
                                     .textSelection(.enabled)
                             }

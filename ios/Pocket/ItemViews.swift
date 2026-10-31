@@ -390,3 +390,65 @@ struct EmptyStateView: View {
         .onAppear { float = true }
     }
 }
+
+/// Consecutive tool calls collapse into one quiet line, the way a terminal-style
+/// agent would summarise "ran 3 commands, viewed 1 image" before you expand it.
+struct ActivityRow: View {
+    let items: [PocketItem]
+    @State private var expanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.18)) { expanded.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(hasError ? Theme.err : Theme.dim2)
+                        .frame(width: 5, height: 5)
+                    Text(summary)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Theme.dim)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 7.5, weight: .semibold))
+                        .foregroundStyle(Theme.dim2.opacity(0.7))
+                        .rotationEffect(.degrees(expanded ? 0 : -90))
+                }
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if expanded {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(items) { item in
+                        ToolRow(item: item)
+                    }
+                }
+                .padding(.leading, 13)
+                .padding(.top, 2)
+            }
+        }
+    }
+
+    private var hasError: Bool {
+        items.contains { $0.status == "err" }
+    }
+
+    private var summary: String {
+        var order: [String] = []
+        var counts: [String: Int] = [:]
+        for item in items {
+            let key = item.label ?? item.name ?? "工具"
+            if counts[key] == nil { order.append(key) }
+            counts[key, default: 0] += 1
+        }
+        let parts = order.map { key in
+            let count = counts[key] ?? 1
+            return count > 1 ? "\(key) ×\(count)" : key
+        }
+        return parts.joined(separator: " · ")
+    }
+}
