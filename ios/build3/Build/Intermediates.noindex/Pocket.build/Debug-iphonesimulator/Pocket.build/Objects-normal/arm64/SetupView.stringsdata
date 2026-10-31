@@ -7,7 +7,7 @@
         "key": "设置",
         "location": {
           "startingColumn": 46,
-          "startingLine": 142
+          "startingLine": 100
         }
       },
       {
@@ -15,23 +15,7 @@
         "key": "配对",
         "location": {
           "startingColumn": 57,
-          "startingLine": 142
-        }
-      },
-      {
-        "comment": "",
-        "key": "这台手机已经注册过，直接扫脸即可，不用验证码",
-        "location": {
-          "startingColumn": 34,
-          "startingLine": 51
-        }
-      },
-      {
-        "comment": "",
-        "key": "用 Face ID 继续",
-        "location": {
-          "startingColumn": 42,
-          "startingLine": 42
+          "startingLine": 100
         }
       },
       {
@@ -39,15 +23,7 @@
         "key": "http://100.x.y.z:8931/pocket",
         "location": {
           "startingColumn": 35,
-          "startingLine": 59
-        }
-      },
-      {
-        "comment": "",
-        "key": "6 位数字",
-        "location": {
-          "startingColumn": 35,
-          "startingLine": 75
+          "startingLine": 33
         }
       },
       {
@@ -55,7 +31,7 @@
         "key": "token",
         "location": {
           "startingColumn": 35,
-          "startingLine": 91
+          "startingLine": 49
         }
       },
       {
@@ -63,7 +39,7 @@
         "key": "正在连接…",
         "location": {
           "startingColumn": 41,
-          "startingLine": 107
+          "startingLine": 65
         }
       },
       {
@@ -71,7 +47,7 @@
         "key": "连接",
         "location": {
           "startingColumn": 61,
-          "startingLine": 107
+          "startingLine": 65
         }
       },
       {
@@ -79,7 +55,7 @@
         "key": "解除配对",
         "location": {
           "startingColumn": 34,
-          "startingLine": 130
+          "startingLine": 88
         }
       },
       {
@@ -87,7 +63,7 @@
         "key": "配对这台 Mac",
         "location": {
           "startingColumn": 18,
-          "startingLine": 161
+          "startingLine": 119
         }
       },
       {
@@ -95,7 +71,7 @@
         "key": "Pocket 通过你自己的 Tailscale 网络连接电脑上的 DeepSeek Harness，令牌只保存在本机。",
         "location": {
           "startingColumn": 18,
-          "startingLine": 164
+          "startingLine": 122
         }
       },
       {
@@ -103,7 +79,7 @@
         "key": "怎么找令牌",
         "location": {
           "startingColumn": 18,
-          "startingLine": 174
+          "startingLine": 132
         }
       },
       {
@@ -111,7 +87,7 @@
         "key": "电脑上打开 ~/.dsh/pocket/state.json，复制其中的 token；服务器地址就是你在手机浏览器里能打开的那个 /pocket 地址。",
         "location": {
           "startingColumn": 18,
-          "startingLine": 177
+          "startingLine": 135
         }
       }
     ]

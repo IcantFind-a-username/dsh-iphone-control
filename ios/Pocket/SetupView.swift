@@ -26,33 +26,7 @@ struct SetupView: View {
                         hero
                     }
 
-                    if model.hasBiometricKey {
-                        VStack(spacing: 6) {
-                            Button {
-                                busy = true
-                                Task {
-                                    let ok = await model.biometricUnlock()
-                                    busy = false
-                                    if ok, mode == .settings { dismiss() }
-                                }
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "faceid")
-                                        .font(.system(size: 18))
-                                    Text("用 Face ID 继续")
-                                        .font(.system(size: 15.5, weight: .semibold))
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Theme.primary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                .foregroundStyle(Theme.primaryText)
-                            }
-                            .disabled(busy)
-                            Text("这台手机已经注册过，直接扫脸即可，不用验证码")
-                                .font(.system(size: 11))
-                                .foregroundStyle(Theme.dim2)
-                        }
-                    }
+
 
                     VStack(alignment: .leading, spacing: 8) {
                         label("服务器地址")
@@ -61,22 +35,6 @@ struct SetupView: View {
                             .autocorrectionDisabled()
                             .keyboardType(.URL)
                             .font(.system(size: 15, design: .monospaced))
-                            .padding(13)
-                            .background(Color.white.opacity(0.05))
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .strokeBorder(Theme.lineStrong)
-                            )
-                    }
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        label("验证码（开启两步验证后必填）")
-                        TextField("6 位数字", text: $code)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .keyboardType(.numberPad)
-                            .font(.system(size: 16, design: .monospaced))
                             .padding(13)
                             .background(Color.white.opacity(0.05))
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

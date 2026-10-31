@@ -86,22 +86,23 @@ final class AppModel: ObservableObject {
 
     // MARK: - Pairing
 
+    static func normalizedBase(_ raw: String) -> String {
+        var value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.isEmpty { return value }
+        if !value.lowercased().hasPrefix("http://") && !value.lowercased().hasPrefix("https://") {
+            value = "https://" + value
+        }
+        while value.hasSuffix("/") { value.removeLast() }
+        if !value.lowercased().hasSuffix("/pocket") { value += "/pocket" }
+        return value
+    }
+
     @discardableResult
     func pair(base: String, token: String, code: String = "") async -> Bool {
+        let base = Self.normalizedBase(base)
         guard let candidate = PocketAPI(baseURLString: base, token: token) else {
             connectionError = "服务器地址无效"
             return false
-        }
-
-        // This phone already holds a Secure Enclave key: prove it with Face ID
-        // instead of asking for a fresh TOTP code.
-        if hasBiometricKey, !deviceId.isEmpty, code.isEmpty {
-            self.baseURL = base.trimmingCharacters(in: .whitespacesAndNewlines)
-            self.token = token.trimmingCharacters(in: .whitespacesAndNewlines)
-            UserDefaults.standard.set(self.baseURL, forKey: "pocket.base")
-            UserDefaults.standard.set(self.token, forKey: "pocket.token")
-            if await biometricUnlock() { return true }
-            // Fall through: the key was revoked or the server was reset.
         }
 
         do {
@@ -118,20 +119,7 @@ final class AppModel: ObservableObject {
                 }
                 payload["code"] = trimmedCode
             }
-            // Prefer a Secure Enclave key: after this enrollment every re-pair is a
-            // Face ID signature instead of a 6-digit code.
-            var keyed = false
-            if BiometricKey.available {
-                do {
-                    let existingKey = BiometricKey.load()
-                    let key = try existingKey ?? BiometricKey.create()
-                    payload["publicKey"] = BiometricKey.publicKeyBase64(key)
-                    keyed = true
-                } catch {
-                    keyed = false
-                }
-            }
-            let response: PairResponse = try await candidate.post(keyed ? "api/enroll" : "api/pair", json: payload)
+            let response: PairResponse = try await candidate.post("api/pair", json: payload)
             guard let deviceToken = response.deviceToken, !deviceToken.isEmpty else {
                 connectionError = response.error ?? "配对失败"
                 return false
