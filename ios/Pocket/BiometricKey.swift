@@ -39,7 +39,6 @@ enum BiometricKey {
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var item: CFTypeRef?
-        query[kSecUseOperationPrompt as String] = "用 Face ID 解锁 Pocket"
         guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
               let data = item as? Data else { return nil }
         return try? SecureEnclave.P256.Signing.PrivateKey(dataRepresentation: data)

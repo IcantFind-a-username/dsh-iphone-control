@@ -92,6 +92,18 @@ final class AppModel: ObservableObject {
             connectionError = "服务器地址无效"
             return false
         }
+
+        // This phone already holds a Secure Enclave key: prove it with Face ID
+        // instead of asking for a fresh TOTP code.
+        if hasBiometricKey, !deviceId.isEmpty, code.isEmpty {
+            self.baseURL = base.trimmingCharacters(in: .whitespacesAndNewlines)
+            self.token = token.trimmingCharacters(in: .whitespacesAndNewlines)
+            UserDefaults.standard.set(self.baseURL, forKey: "pocket.base")
+            UserDefaults.standard.set(self.token, forKey: "pocket.token")
+            if await biometricUnlock() { return true }
+            // Fall through: the key was revoked or the server was reset.
+        }
+
         do {
             let info: PairInfo = try await candidate.get("api/pair-info")
             var payload: [String: Any] = [
