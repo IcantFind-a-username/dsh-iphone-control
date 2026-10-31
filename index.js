@@ -51,7 +51,11 @@ function loadState() {
   try {
     const raw = fs.readFileSync(stateFile(), 'utf8')
     const parsed = JSON.parse(raw)
-    if (parsed && typeof parsed.token === 'string' && parsed.token.length >= 16) return parsed
+    if (parsed && typeof parsed.token === 'string' && parsed.token.length >= 16) {
+      if (!('totp' in parsed)) parsed.totp = null
+      if (!parsed.devices || typeof parsed.devices !== 'object') parsed.devices = {}
+      return parsed
+    }
   } catch {
     /* first run or unreadable: mint below */
   }
@@ -63,6 +67,15 @@ function loadState() {
     log({}, 'warn', `cannot persist pairing token: ${String(error)}`)
   }
   return state
+}
+
+function saveState(state) {
+  try {
+    fs.mkdirSync(path.dirname(stateFile()), { recursive: true, mode: 0o700 })
+    fs.writeFileSync(stateFile(), JSON.stringify(state, null, 2), { mode: 0o600 })
+  } catch {
+    /* best effort */
+  }
 }
 
 function tokenDigest(token) {
@@ -504,6 +517,82 @@ class Feed {
   }
 }
 
+/* --------------------------------------------------------------------- TOTP */
+
+const BASE32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+
+function base32Encode(buffer) {
+  let bits = 0
+  let value = 0
+  let out = ''
+  for (const byte of buffer) {
+    value = (value << 8) | byte
+    bits += 8
+    while (bits >= 5) {
+      out += BASE32[(value >>> (bits - 5)) & 31]
+      bits -= 5
+    }
+  }
+  if (bits > 0) out += BASE32[(value << (5 - bits)) & 31]
+  return out
+}
+
+function base32Decode(text) {
+  const clean = String(text).toUpperCase().replace(/[^A-Z2-7]/g, '')
+  let bits = 0
+  let value = 0
+  const out = []
+  for (const char of clean) {
+    const index = BASE32.indexOf(char)
+    if (index < 0) continue
+    value = (value << 5) | index
+    bits += 5
+    if (bits >= 8) {
+      out.push((value >>> (bits - 8)) & 0xff)
+      bits -= 8
+    }
+  }
+  return Buffer.from(out)
+}
+
+function totpAt(secret, step) {
+  const key = base32Decode(secret)
+  const counter = Buffer.alloc(8)
+  counter.writeBigUInt64BE(BigInt(step))
+  const digest = crypto.createHmac('sha1', key).update(counter).digest()
+  const offset = digest[digest.length - 1] & 0x0f
+  const binary =
+    ((digest[offset] & 0x7f) << 24) |
+    ((digest[offset + 1] & 0xff) << 16) |
+    ((digest[offset + 2] & 0xff) << 8) |
+    (digest[offset + 3] & 0xff)
+  return String(binary % 1_000_000).padStart(6, '0')
+}
+
+function verifyTotp(secret, code) {
+  const input = String(code || '').replace(/\s/g, '')
+  if (!/^\d{6}$/.test(input)) return false
+  const step = Math.floor(Date.now() / 30_000)
+  for (let delta = -1; delta <= 1; delta += 1) {
+    if (safeEqual(totpAt(secret, step + delta), input)) return true
+  }
+  return false
+}
+
+function deviceKey(token) {
+  return crypto.createHash('sha256').update(String(token)).digest('hex')
+}
+
+function mintDevice(state, label) {
+  const token = crypto.randomBytes(24).toString('hex')
+  state.devices[deviceKey(token)] = {
+    label: String(label || 'device').slice(0, 40),
+    createdAt: Date.now(),
+    lastSeen: Date.now()
+  }
+  return token
+}
+
 /* ------------------------------------------------------------------ routes */
 
 function readBody(req, limit) {
@@ -593,14 +682,49 @@ export function apply(ctx, config) {
   const digest = tokenDigest(state.token)
   const feeds = new Map()
 
+  const isLoopback = (req) => {
+    const address = String((req.socket && req.socket.remoteAddress) || '')
+    return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1'
+  }
+
+  const totpEnabled = () => Boolean(state.totp && state.totp.secret)
+
+  /** The Mac's own browser talks to 127.0.0.1 with a loopback Host. A request
+   * proxied by `tailscale serve` also arrives from 127.0.0.1, but keeps the
+   * tailnet Host — so Host, not the socket, decides "the Mac itself". */
+  const isLoopbackRequest = (req) => {
+    if (!isLoopback(req)) return false
+    const host = String((req.headers && req.headers.host) || '')
+    const hostname = host.replace(/:\d+$/, '').replace(/^\[|\]$/g, '')
+    return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1'
+  }
+
+  /** A request is trusted when it carries a minted device token, or the master
+   * token from the loopback interface (the Mac itself). The master token alone
+   * never works remotely once TOTP is enrolled. */
   const authed = (req) => {
     const header = typeof req.headers['x-pocket-token'] === 'string' ? req.headers['x-pocket-token'] : ''
-    if (header && safeEqual(tokenDigest(header), digest)) return true
-    const cookies = String(req.headers.cookie || '')
-    for (const part of cookies.split(';')) {
-      const [key, ...rest] = part.trim().split('=')
-      if (key === COOKIE && rest.length && safeEqual(rest.join('='), digest)) return true
+    const cookieValue = (() => {
+      const cookies = String(req.headers.cookie || '')
+      for (const part of cookies.split(';')) {
+        const [key, ...rest] = part.trim().split('=')
+        if (key === COOKIE && rest.length) return rest.join('=')
+      }
+      return ''
+    })()
+
+    if (header) {
+      const key = deviceKey(header)
+      if (state.devices[key]) {
+        state.devices[key].lastSeen = Date.now()
+        return true
+      }
+      if (safeEqual(tokenDigest(header), digest)) {
+        if (!totpEnabled() || isLoopbackRequest(req)) return true
+      }
     }
+    // Legacy browser cookie: the raw digest, set by the one-time token exchange.
+    if (cookieValue && safeEqual(cookieValue, digest) && (!totpEnabled() || isLoopbackRequest(req))) return true
     return false
   }
 
@@ -643,6 +767,34 @@ export function apply(ctx, config) {
   }, 60 * 1000)
   if (typeof sweep.unref === 'function') sweep.unref()
 
+  /* Model guard. The phone surface must never run a model the owner blocked.
+     Three chokepoints: the catalog (hide it), the explicit selection call
+     (reject it), and the prompt path (a session may have been switched from
+     the desktop, where the block does not apply). */
+  const blockedModels = new Set(
+    (Array.isArray(cfg.blockedModels) ? cfg.blockedModels : ['deepseek-v4-pro'])
+      .filter((entry) => typeof entry === 'string' && entry.trim())
+      .map((entry) => entry.trim())
+  )
+  const isBlockedModel = (selection) => {
+    if (!selection || blockedModels.size === 0) return false
+    const model = typeof selection.model === 'string' ? selection.model : ''
+    if (!model) return false
+    const provider = typeof selection.provider === 'string' ? selection.provider : ''
+    return blockedModels.has(model) || (provider !== '' && blockedModels.has(`${provider}/${model}`))
+  }
+  const currentSelection = async (sessionId) => {
+    try {
+      const projections = await ctx.sessionController.projections({ sessionId }, new AbortController().signal)
+      const selection = projections && projections.values ? projections.values.modelSelection : null
+      return selection ? selection.next || selection.lastUsed || null : null
+    } catch {
+      return null
+    }
+  }
+  const blockedMessage = (selection) =>
+    `Pocket 已禁用 ${selection && selection.model ? selection.model : '该模型'}：请先把模型切到别的再发送。`
+
   const handle = async (req, res) => {
     let url
     try {
@@ -671,7 +823,7 @@ export function apply(ctx, config) {
       if (pathname === `${PREFIX}/` || pathname === PREFIX) {
         if (method !== 'GET') return sendJson(res, 405, { ok: false, error: 'method' })
         const token = url.searchParams.get('token')
-        if (token && safeEqual(tokenDigest(token), digest)) {
+        if (token && !totpEnabled() && safeEqual(tokenDigest(token), digest)) {
           res.writeHead(302, {
             'set-cookie': `${COOKIE}=${digest}; Path=${PREFIX}; HttpOnly; SameSite=Lax; Max-Age=31536000`,
             location: `${PREFIX}/`
@@ -696,6 +848,58 @@ export function apply(ctx, config) {
       if (pathname === `${PREFIX}/icon.svg`) return sendFile(res, path.join(WEB_DIR, 'icon.svg'))
 
       /* ---- api ---- */
+      /* ---- enrollment (loopback only) ---- */
+      if (pathname === `${PREFIX}/setup` && method === 'GET') {
+        if (!isLoopback(req)) return sendJson(res, 403, { ok: false, error: 'only on the Mac itself' })
+        if (!state.totp) {
+          state.totp = { secret: base32Encode(crypto.randomBytes(20)), createdAt: Date.now() }
+          saveState(state)
+        }
+        const secret = state.totp.secret
+        const otpauth = `otpauth://totp/DeepSeek:${encodeURIComponent(os.hostname())}?secret=${secret}&issuer=DeepSeek&period=30&digits=6`
+        const grouped = secret.match(/.{1,4}/g).join(' ')
+        const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>两步验证</title>
+<style>body{margin:0;background:#151517;color:#f9fafb;font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;display:grid;place-items:center;min-height:100vh}
+.card{max-width:520px;padding:28px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:#1e1e20}
+h1{font-size:19px;margin:0 0 6px}p{color:#adb2b8;margin:0 0 14px}
+code{display:block;font-family:ui-monospace,Menlo,monospace;font-size:17px;letter-spacing:2px;background:#101012;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 14px;word-break:break-all;color:#e8eaed}
+.small{font-size:12px;color:#81858c;word-break:break-all}
+</style></head><body><div class="card">
+<h1>两步验证（TOTP）</h1>
+<p>在 Authenticator 里「添加账户 → 手动输入」，把下面这串密钥贴进去（每 30 秒 6 位数字）。</p>
+<code>${grouped}</code>
+<p class="small">otpauth: ${otpauth}</p>
+<p>添加完成后，在手机 App 的配对页填入<b>令牌 + 当前 6 位验证码</b>。之后每次重新配对都需要验证码；日常使用走设备令牌，不用重复输入。</p>
+<p class="small">丢失 Authenticator：在 Mac 上删除 ~/.dsh/pocket/state.json 里的 "totp" 字段并重启 DSH 即可重新绑定。</p>
+</div></body></html>`
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
+        res.end(html)
+        return
+      }
+
+      if (pathname === `${PREFIX}/api/pair-info` && method === 'GET') {
+        return sendJson(res, 200, { ok: true, totp: totpEnabled() })
+      }
+
+      if (pathname === `${PREFIX}/api/pair` && method === 'POST') {
+        const body = await readBody(req, 8192)
+        const token = typeof body.token === 'string' ? body.token : ''
+        const code = typeof body.code === 'string' ? body.code : ''
+        if (!token || !safeEqual(tokenDigest(token), digest)) {
+          return sendJson(res, 401, { ok: false, error: '配对令牌不正确' })
+        }
+        if (totpEnabled() && !verifyTotp(state.totp.secret, code)) {
+          return sendJson(res, 401, { ok: false, error: '验证码不正确或已过期' })
+        }
+        const deviceToken = mintDevice(state, body.label)
+        saveState(state)
+        return sendJson(res, 200, {
+          ok: true,
+          deviceToken,
+          totp: totpEnabled()
+        })
+      }
+
       if (!pathname.startsWith(`${PREFIX}/api/`)) return sendJson(res, 404, { ok: false, error: 'not found' })
       if (!authed(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized' })
       const api = pathname.slice(`${PREFIX}/api/`.length)
@@ -807,6 +1011,18 @@ export function apply(ctx, config) {
           content.push({ type: 'image', mediaType, data, ...(typeof image.name === 'string' && image.name ? { name: image.name } : {}) })
         }
         if (content.length === 0) return sendJson(res, 400, { ok: false, error: '消息为空' })
+        let selection = await currentSelection(id)
+        if (!selection) {
+          const catalog = await ctx.sessionController.modelCatalog().catch(() => null)
+          selection = catalog && catalog.default ? catalog.default : null
+        }
+        if (isBlockedModel(selection)) {
+          return sendJson(res, 409, {
+            ok: false,
+            error: blockedMessage(selection),
+            blocked: { provider: selection.provider, model: selection.model }
+          })
+        }
         const requestId = `pocket-${crypto.randomUUID()}`
         await ctx.sessionController.prompt(
           {
@@ -877,12 +1093,21 @@ export function apply(ctx, config) {
             /* fall back to the deployment default */
           }
         }
+        const groups = (Array.isArray(catalog.groups) ? catalog.groups : [])
+          .map((group) => ({
+            ...group,
+            models: (Array.isArray(group.models) ? group.models : []).filter(
+              (model) => !isBlockedModel({ provider: group.id, model: model.id })
+            )
+          }))
+          .filter((group) => group.models.length > 0)
         return sendJson(res, 200, {
           ok: true,
           default: catalog.default,
-          groups: catalog.groups,
+          groups,
           failures: catalog.failures || [],
-          current
+          current,
+          blocked: [...blockedModels]
         })
       }
 
@@ -892,6 +1117,9 @@ export function apply(ctx, config) {
         const provider = typeof body.provider === 'string' ? body.provider : ''
         const model = typeof body.model === 'string' ? body.model : ''
         if (!id || !provider || !model) return sendJson(res, 400, { ok: false, error: 'missing id/provider/model' })
+        if (isBlockedModel({ provider, model })) {
+          return sendJson(res, 403, { ok: false, error: `Pocket 已禁用 ${model}，请在桌面端使用。` })
+        }
         const result = await ctx.sessionController.selectModel({
           sessionId: id,
           provider,

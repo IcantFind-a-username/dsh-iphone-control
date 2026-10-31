@@ -1,3 +1,8 @@
 - insert:
     - id: pocket
       name: dsh-pocket
+      config:
+        # Never let the phone surface run these models (bare id or provider/id).
+        # Set to [] to lift the restriction. Takes effect after a DSH restart.
+        blockedModels:
+          - deepseek-v4-pro

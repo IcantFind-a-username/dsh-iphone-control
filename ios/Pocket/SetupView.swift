@@ -15,6 +15,7 @@ struct SetupView: View {
     @State private var token = ""
     @State private var busy = false
     @State private var error: String?
+    @State private var code = ""
 
     var body: some View {
         ZStack {
@@ -32,6 +33,22 @@ struct SetupView: View {
                             .autocorrectionDisabled()
                             .keyboardType(.URL)
                             .font(.system(size: 15, design: .monospaced))
+                            .padding(13)
+                            .background(Color.white.opacity(0.05))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .strokeBorder(Theme.lineStrong)
+                            )
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        label("验证码（开启两步验证后必填）")
+                        TextField("6 位数字", text: $code)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .keyboardType(.numberPad)
+                            .font(.system(size: 16, design: .monospaced))
                             .padding(13)
                             .background(Color.white.opacity(0.05))
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -153,7 +170,7 @@ struct SetupView: View {
         busy = true
         error = nil
         Task {
-            let ok = await model.pair(base: base, token: token)
+            let ok = await model.pair(base: base, token: token, code: code)
             busy = false
             if ok {
                 Haptics.done()

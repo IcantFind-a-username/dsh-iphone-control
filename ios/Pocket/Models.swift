@@ -147,6 +147,18 @@ struct WhaleResponse: Codable, Equatable {
     var updatedAt: Double?
 }
 
+struct PairInfo: Codable {
+    var ok: Bool
+    var totp: Bool
+}
+
+struct PairResponse: Codable {
+    var ok: Bool
+    var deviceToken: String?
+    var totp: Bool?
+    var error: String?
+}
+
 struct PermissionOption: Codable, Identifiable, Equatable {
     var value: String
     var name: String

@@ -5,6 +5,7 @@ import SwiftUI
 final class AppModel: ObservableObject {
     @Published private(set) var baseURL: String
     @Published private(set) var token: String
+    @Published private(set) var deviceToken: String
 
     @Published var sessionId: String?
     @Published var title = "Pocket"
@@ -41,27 +42,50 @@ final class AppModel: ObservableObject {
     init() {
         baseURL = UserDefaults.standard.string(forKey: "pocket.base") ?? PocketDefaults.baseURL
         token = UserDefaults.standard.string(forKey: "pocket.token") ?? PocketDefaults.token
+        deviceToken = UserDefaults.standard.string(forKey: "pocket.device") ?? ""
     }
 
     var paired: Bool { api != nil && !token.isEmpty }
     var liveActive: Bool { running || !liveText.isEmpty || !liveThink.isEmpty }
 
-    private var api: PocketAPI? { PocketAPI(baseURLString: baseURL, token: token) }
+    private var api: PocketAPI? {
+        let credential = deviceToken.isEmpty ? token : deviceToken
+        return PocketAPI(baseURLString: baseURL, token: credential)
+    }
 
     // MARK: - Pairing
 
     @discardableResult
-    func pair(base: String, token: String) async -> Bool {
+    func pair(base: String, token: String, code: String = "") async -> Bool {
         guard let candidate = PocketAPI(baseURLString: base, token: token) else {
             connectionError = "服务器地址无效"
             return false
         }
         do {
-            let _: PingResponse = try await candidate.get("api/ping")
+            let info: PairInfo = try await candidate.get("api/pair-info")
+            var payload: [String: Any] = [
+                "token": token.trimmingCharacters(in: .whitespacesAndNewlines),
+                "label": UIDevice.current.name
+            ]
+            let trimmedCode = code.trimmingCharacters(in: .whitespacesAndNewlines)
+            if info.totp {
+                guard trimmedCode.count == 6 else {
+                    connectionError = "这台电脑已开启两步验证，请输入 Authenticator 里的 6 位验证码"
+                    return false
+                }
+                payload["code"] = trimmedCode
+            }
+            let response: PairResponse = try await candidate.post("api/pair", json: payload)
+            guard let deviceToken = response.deviceToken, !deviceToken.isEmpty else {
+                connectionError = response.error ?? "配对失败"
+                return false
+            }
             self.baseURL = base.trimmingCharacters(in: .whitespacesAndNewlines)
             self.token = token.trimmingCharacters(in: .whitespacesAndNewlines)
+            self.deviceToken = deviceToken
             UserDefaults.standard.set(self.baseURL, forKey: "pocket.base")
             UserDefaults.standard.set(self.token, forKey: "pocket.token")
+            UserDefaults.standard.set(self.deviceToken, forKey: "pocket.device")
             connectionError = nil
             await start()
             return true
@@ -75,9 +99,11 @@ final class AppModel: ObservableObject {
         pollTask?.cancel()
         pollTask = nil
         token = ""
+        deviceToken = ""
         sessionId = nil
         items = []
         UserDefaults.standard.removeObject(forKey: "pocket.token")
+        UserDefaults.standard.removeObject(forKey: "pocket.device")
     }
 
     // MARK: - Lifecycle

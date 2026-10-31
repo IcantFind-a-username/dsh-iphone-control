@@ -155,6 +155,36 @@ docs/               截图
 
 所有 `/api/*` 都需要 `x-pocket-token` 头或配对后的 cookie。
 
+## 禁用某个模型
+
+默认禁止 Pocket 使用 `deepseek-v4-pro`，三道闸口：
+
+- `/pocket/api/models` 的目录里直接不返回它，App 的模型列表看不到
+- `/pocket/api/model` 选中它返回 `403`
+- 会话已经在桌面端切到 V4-Pro 时，从手机发消息返回 `409`，提示先换模型
+
+桌面端不受影响。改 `cordis.patch.yml` 里 `pocket` 行的 `config.blockedModels`：
+
+```yaml
+- insert:
+    - id: pocket
+      name: dsh-pocket
+      config:
+        blockedModels:
+          - deepseek-v4-pro            # 或 provider/model：deepseek-account/deepseek-v4-pro
+```
+
+`blockedModels: []` 关闭限制；改完重启 DSH 生效。
+
+## 两步验证（TOTP）
+
+在 Mac 上打开 `http://127.0.0.1:64044/pocket/setup`（仅回环可访问），把页面上的密钥加进 Authenticator。
+之后 `配对令牌` 只能用来换设备令牌；**远程请求必须带设备令牌**，只拿 master token 进不来。
+
+- 配对：地址 + 令牌 + 当前 6 位验证码 → 服务端签发设备令牌（日常不用再输码）
+- 丢失 Authenticator：删掉 `~/.dsh/pocket/state.json` 里的 `totp` 字段并重启 DSH
+- 撤销某台设备：删掉 `state.json` 里 `devices` 的对应条目
+
 ## 安全说明
 
 - 配对令牌等同于「可以让你电脑上的 Agent 执行操作」的凭据，请勿公开

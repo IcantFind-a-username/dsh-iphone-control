@@ -1,0 +1,69 @@
+{
+  "buildCommand" : {
+    "command" : "build",
+    "skipDependencies" : false,
+    "style" : "buildOnly"
+  },
+  "configuredTargets" : [
+    {
+      "guid" : "aed124ad08d73dd9fc166532f19787f48fa7f71630a83abf99c8c3b9e7eb8fcd"
+    }
+  ],
+  "containerPath" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/Pocket.xcodeproj",
+  "continueBuildingAfterErrors" : false,
+  "dependencyScope" : "workspace",
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "build",
+    "activeArchitecture" : "undefined_arch",
+    "activeRunDestination" : {
+      "disableOnlyActiveArch" : true,
+      "hostTargetedPlatform" : null,
+      "platform" : "iphonesimulator",
+      "sdk" : "iphonesimulator26.5",
+      "sdkVariant" : "iphonesimulator",
+      "supportedArchitectures" : [
+        "i386",
+        "x86_64"
+      ],
+      "targetArchitecture" : "undefined_arch"
+    },
+    "arenaInfo" : {
+      "buildIntermediatesPath" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build2/Build/Intermediates.noindex",
+      "buildProductsPath" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build2/Build/Products",
+      "derivedDataPath" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build2",
+      "indexDataStoreFolderPath" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build2/Index.noindex/DataStore",
+      "indexEnableDataStore" : true,
+      "indexPCHPath" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build2/Index.noindex/PrecompiledHeaders",
+      "pchPath" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build2/Build/Intermediates.noindex/PrecompiledHeaders"
+    },
+    "configurationName" : "Debug",
+    "overrides" : {
+      "commandLine" : {
+        "table" : {
+          "ARCHS" : "arm64",
+          "CODE_SIGNING_ALLOWED" : "NO",
+          "ONLY_ACTIVE_ARCH" : "YES",
+          "POCKET_BASE_URL" : "http://127.0.0.1:64044/pocket",
+          "POCKET_TOKEN" : "352cb882a00f03c6125a00533beea2bcd5f20e3da039e0d5",
+          "SDKROOT" : "iphonesimulator26.5"
+        }
+      },
+      "synthesized" : {
+        "table" : {
+          "ACTION" : "build",
+          "ENABLE_PREVIEWS" : "NO",
+          "ENABLE_XOJIT_PREVIEWS" : "YES",
+          "ONLY_ACTIVE_ARCH" : "YES"
+        }
+      }
+    }
+  },
+  "schemeCommand" : "launch",
+  "showNonLoggedProgress" : true,
+  "useDryRun" : false,
+  "useImplicitDependencies" : true,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : true
+}
