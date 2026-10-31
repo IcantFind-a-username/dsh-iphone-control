@@ -8,6 +8,7 @@ struct MarkdownBlock: Identifiable {
         case bullets([String])
         case ordered([String])
         case quote(String)
+        case table(headers: [String], rows: [[String]], aligns: [TextAlignment])
     }
 
     let id: Int
@@ -80,6 +81,35 @@ enum MarkdownParser {
                 }
             }
 
+            // GFM pipe table: header line, separator line, then rows.
+            if trimmed.hasPrefix("|"), index + 1 < lines.count {
+                let next = lines[index + 1].trimmingCharacters(in: .whitespaces)
+                let isSeparator = next.hasPrefix("|")
+                    && next.range(of: #"^\|[\s:|-]+\|$"#, options: .regularExpression) != nil
+                    && next.contains("-")
+                if isSeparator {
+                    flushParagraph()
+                    flushList()
+                    let headers = tableCells(trimmed)
+                    let aligns = tableAligns(next, count: headers.count)
+                    var rows: [[String]] = []
+                    index += 2
+                    while index < lines.count {
+                        let rowLine = lines[index].trimmingCharacters(in: .whitespaces)
+                        guard rowLine.hasPrefix("|") else { break }
+                        var cells = tableCells(rowLine)
+                        if cells.count < headers.count {
+                            cells += Array(repeating: "", count: headers.count - cells.count)
+                        }
+                        rows.append(Array(cells.prefix(headers.count)))
+                        index += 1
+                    }
+                    blocks.append(MarkdownBlock(id: counter, kind: .table(headers: headers, rows: rows, aligns: aligns)))
+                    counter += 1
+                    continue
+                }
+            }
+
             if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") || trimmed.hasPrefix("+ ") {
                 flushParagraph()
                 if list == nil || list!.kind != 0 {
@@ -126,6 +156,23 @@ enum MarkdownParser {
         flushParagraph()
         flushList()
         return blocks
+    }
+
+    static func tableCells(_ line: String) -> [String] {
+        var body = line
+        if body.hasPrefix("|") { body.removeFirst() }
+        if body.hasSuffix("|") { body.removeLast() }
+        return body.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+    }
+
+    static func tableAligns(_ separator: String, count: Int) -> [TextAlignment] {
+        let cells = tableCells(separator)
+        return (0..<count).map { index in
+            let cell = index < cells.count ? cells[index] : ""
+            if cell.hasPrefix(":") && cell.hasSuffix(":") { return .center }
+            if cell.hasSuffix(":") { return .trailing }
+            return .leading
+        }
     }
 
     static func inline(_ text: String) -> AttributedString {
@@ -200,6 +247,9 @@ struct MarkdownView: View {
                         }
                     }
 
+                case .table(let headers, let rows, let aligns):
+                    TableBlockView(headers: headers, rows: rows, aligns: aligns, size: size)
+
                 case .quote(let text):
                     Text(MarkdownParser.inline(text))
                         .font(.system(size: size - 1.5))
@@ -267,5 +317,58 @@ struct CodeBlockView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(Theme.line)
         )
+    }
+}
+
+
+struct TableBlockView: View {
+    let headers: [String]
+    let rows: [[String]]
+    let aligns: [TextAlignment]
+    var size: CGFloat = 16
+
+    var body: some View {
+        let columns = max(1, headers.count)
+        let spacing: CGFloat = 12
+        let available = UIScreen.main.bounds.width - 40
+        let columnWidth = max(56, (available - spacing * CGFloat(columns - 1)) / CGFloat(columns))
+        return Grid(alignment: .leading, horizontalSpacing: spacing, verticalSpacing: 0) {
+                GridRow {
+                    ForEach(Array(headers.enumerated()), id: \.offset) { index, header in
+                        Text(MarkdownParser.inline(header))
+                            .font(.system(size: size - 2.5, weight: .medium))
+                            .foregroundStyle(Theme.dim)
+                            .frame(width: columnWidth, alignment: alignment(index))
+                            .padding(.vertical, 8)
+                    }
+                }
+                Rectangle()
+                    .fill(Theme.line)
+                    .frame(height: 1)
+                    .gridCellUnsizedAxes(.horizontal)
+                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                    GridRow {
+                        ForEach(Array(row.enumerated()), id: \.offset) { index, cell in
+                            Text(MarkdownParser.inline(cell))
+                                .font(.system(size: size - 2.5))
+                                .foregroundStyle(Theme.fgSoft)
+                                .frame(width: columnWidth, alignment: alignment(index))
+                                .padding(.vertical, 7)
+                                .textSelection(.enabled)
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func alignment(_ index: Int) -> Alignment {
+        let alignment = index < aligns.count ? aligns[index] : .leading
+        switch alignment {
+        case .center: return .center
+        case .trailing: return .trailing
+        default: return .leading
+        }
     }
 }

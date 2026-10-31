@@ -12,38 +12,36 @@ struct ItemRow: View {
             if let ask = item.ask {
                 AskCard(item: item, ask: ask)
             } else {
-                ToolCard(item: item)
+                ToolRow(item: item)
             }
         case "n":
-            NoticeChip(text: item.text ?? "")
+            NoticeLine(text: item.text ?? "")
         default:
             AssistantRow(item: item)
         }
     }
 }
 
+// MARK: - User
+
 struct UserBubble: View {
     let item: PocketItem
     var sessionId: String = ""
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 0) {
-            Spacer(minLength: 46)
-            VStack(alignment: .leading, spacing: 7) {
+        HStack {
+            Spacer(minLength: 56)
+            VStack(alignment: .leading, spacing: 8) {
                 if let images = item.imgs, !images.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
                             ForEach(Array(images.enumerated()), id: \.offset) { _, ref in
                                 if ref.attachmentId != nil {
-                                    AttachmentImage(sessionId: sessionId, ref: ref, size: 168)
+                                    AttachmentImage(sessionId: sessionId, ref: ref, size: 170)
                                 } else {
                                     Text("照片")
-                                        .font(.system(size: 12, weight: .medium))
-                                        .foregroundStyle(.white.opacity(0.92))
-                                        .padding(.horizontal, 9)
-                                        .padding(.vertical, 3)
-                                        .background(Color.white.opacity(0.18))
-                                        .clipShape(Capsule())
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(.white.opacity(0.85))
                                 }
                             }
                         }
@@ -54,13 +52,13 @@ struct UserBubble: View {
                     Text(text)
                         .font(.system(size: 16))
                         .lineSpacing(3)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.fg)
                         .textSelection(.enabled)
                 }
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(Theme.bubble)
+            .padding(.vertical, 11)
+            .background(Theme.layer2)
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
@@ -72,35 +70,33 @@ struct PendingBubble: View {
 
     var body: some View {
         HStack {
-            Spacer(minLength: 46)
+            Spacer(minLength: 56)
             VStack(alignment: .leading, spacing: 6) {
                 if imageCount > 0 {
                     Text("照片 ×\(imageCount)")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.9))
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 3)
-                        .background(Color.white.opacity(0.18))
-                        .clipShape(Capsule())
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Theme.dim)
                 }
                 Text(text)
                     .font(.system(size: 16))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.fg)
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(Theme.bubble)
+            .padding(.vertical, 11)
+            .background(Theme.layer2)
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .opacity(0.72)
+            .opacity(0.6)
         }
     }
 }
+
+// MARK: - Assistant
 
 struct AssistantRow: View {
     let item: PocketItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: 10) {
             if let think = item.think, !think.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 ReasoningView(text: think, streaming: false, initiallyExpanded: false)
             }
@@ -116,43 +112,35 @@ struct AssistantRow: View {
                     }
             }
             if let usage = item.usage {
-                UsageRow(usage: usage)
+                UsageLine(usage: usage)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-struct UsageRow: View {
+struct UsageLine: View {
     let usage: PocketUsage
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 6) {
             if let output = usage.output, output > 0 {
-                chip("\(output.formatted()) tok")
+                Text("\(output.formatted()) tok")
             }
             if let tps = usage.tps, tps > 0 {
-                chip(String(format: "%.1f tok/s", tps))
+                Text("· \(String(format: "%.0f", tps)) tok/s")
             }
             if let rate = usage.cacheRate {
-                chip("缓存 \(Int(rate.rounded()))%")
+                Text("· 缓存 \(Int(rate.rounded()))%")
             }
             if let secs = usage.secs, secs > 0 {
-                chip(String(format: "%.1fs", secs))
+                Text("· \(String(format: "%.1f", secs))s")
             }
         }
-        .font(.system(size: 11.5, design: .rounded))
+        .font(.system(size: 11, design: .rounded))
+        .monospacedDigit()
         .foregroundStyle(Theme.dim2)
         .padding(.top, 2)
-    }
-
-    private func chip(_ text: String) -> some View {
-        Text(text)
-            .monospacedDigit()
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2.5)
-            .background(Color.white.opacity(0.04), in: Capsule())
-            .overlay(Capsule().strokeBorder(Color.white.opacity(0.06)))
     }
 }
 
@@ -161,7 +149,7 @@ struct LiveRow: View {
     let think: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: 10) {
             if !think.isEmpty {
                 ReasoningView(text: think, streaming: true, initiallyExpanded: false)
             }
@@ -196,17 +184,17 @@ struct ReasoningView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 4) {
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
+                withAnimation(.easeInOut(duration: 0.18)) { expanded.toggle() }
             } label: {
-                HStack(spacing: 7) {
+                HStack(spacing: 5) {
                     if streaming { Shimmer() }
-                    Text(streaming ? "思考中" : "思考过程")
-                        .font(.system(size: 12))
+                    Text(streaming ? "思考中" : "思考")
+                        .font(.system(size: 11.5))
                         .foregroundStyle(Theme.dim2)
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.system(size: 8, weight: .semibold))
                         .foregroundStyle(Theme.dim2)
                         .rotationEffect(.degrees(expanded ? 0 : -90))
                     Spacer(minLength: 0)
@@ -215,211 +203,190 @@ struct ReasoningView: View {
             .buttonStyle(.plain)
 
             Text(text)
-                .font(.system(size: 14))
+                .font(.system(size: 13.5))
                 .lineSpacing(2.5)
                 .foregroundStyle(Theme.dim)
                 .lineLimit(expanded ? nil : 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled)
         }
-        .padding(.leading, 11)
-        .overlay(alignment: .leading) {
-            Rectangle()
-                .fill(Theme.lineStrong)
-                .frame(width: 2)
-        }
     }
 }
 
-struct ToolCard: View {
+// MARK: - Tools
+
+struct ToolRow: View {
     let item: PocketItem
     @State private var expanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.easeInOut(duration: 0.18)) { expanded.toggle() }
+                withAnimation(.easeInOut(duration: 0.16)) { expanded.toggle() }
             } label: {
-                HStack(spacing: 9) {
+                HStack(spacing: 8) {
                     Circle()
                         .fill(statusColor)
-                        .frame(width: 7, height: 7)
+                        .frame(width: 5, height: 5)
                     Text(item.label ?? item.name ?? "工具")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(item.status == "err" ? Color(hex: 0xFFB3AD) : Theme.fgSoft)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Theme.dim)
                     if let detail = item.detail, !detail.isEmpty {
                         Text(detail)
-                            .font(.system(size: 12, design: .monospaced))
-                            .foregroundStyle(Theme.dim)
+                            .font(.system(size: 11.5, design: .monospaced))
+                            .foregroundStyle(Theme.dim2)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
                     Spacer(minLength: 0)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 7.5, weight: .semibold))
+                        .foregroundStyle(Theme.dim2.opacity(0.8))
+                        .rotationEffect(.degrees(expanded ? 0 : -90))
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
+                .padding(.vertical, 5)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
             if expanded {
-                Rectangle()
-                    .fill(Theme.line)
-                    .frame(height: 1)
                 ScrollView {
                     Text(item.result?.isEmpty == false ? (item.result ?? "") : "运行中…")
-                        .font(.system(size: 12, design: .monospaced))
+                        .font(.system(size: 11.5, design: .monospaced))
                         .foregroundStyle(Theme.dim)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(12)
+                        .padding(10)
                         .textSelection(.enabled)
                 }
-                .frame(maxHeight: 240)
+                .frame(maxHeight: 220)
+                .background(Theme.layer1, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .padding(.top, 2)
+                .padding(.bottom, 4)
             }
         }
-        .background(Color.white.opacity(0.035))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Theme.line)
-        )
     }
 
     private var statusColor: Color {
         switch item.status {
         case "run": return Theme.accent
         case "err": return Theme.err
-        case "ok": return Theme.ok
+        case "ok": return Theme.ok.opacity(0.8)
         default: return Theme.dim2
         }
     }
 }
 
-struct NoticeChip: View {
+struct NoticeLine: View {
     let text: String
 
     var body: some View {
-        HStack {
-            Spacer(minLength: 20)
-            Text(text)
-                .font(.system(size: 12.5))
-                .foregroundStyle(Theme.warn)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
-                .background(Theme.warn.opacity(0.09))
-                .clipShape(Capsule())
-                .overlay(Capsule().strokeBorder(Theme.warn.opacity(0.24)))
-            Spacer(minLength: 20)
-        }
+        Text(text)
+            .font(.system(size: 11.5))
+            .foregroundStyle(Theme.warn.opacity(0.9))
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 2)
     }
 }
 
-struct EmptyStateView: View {
-    @State private var float = false
-
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(uiImage: UIImage(named: "brand") ?? UIImage())
-                .resizable()
-                .interpolation(.high)
-                .frame(width: 78, height: 78)
-                .clipShape(RoundedRectangle(cornerRadius: 19, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 19, style: .continuous)
-                        .strokeBorder(Theme.lineStrong, lineWidth: 1)
-                )
-                .offset(y: float ? -6 : 0)
-                .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: float)
-            Text("开始对话")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(Theme.fg)
-                .padding(.top, 6)
-            Text("在手机上继续你的 Harness 会话")
-                .font(.system(size: 13.5))
-                .foregroundStyle(Theme.dim)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 60)
-        .onAppear { float = true }
-    }
-}
+// MARK: - Ask
 
 struct AskCard: View {
     let item: PocketItem
     let ask: AskPayload
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
-                Image(systemName: "questionmark.bubble")
-                    .font(.system(size: 11, weight: .medium))
+                Image(systemName: "questionmark.circle")
+                    .font(.system(size: 12))
                 Text("需要你回答")
-                    .font(.system(size: 11.5, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                 Spacer(minLength: 0)
                 if item.status == "run" {
                     Text("等待中")
-                        .font(.system(size: 10.5))
+                        .font(.system(size: 11))
                         .foregroundStyle(Theme.warn)
                 }
             }
             .foregroundStyle(Theme.dim)
 
             ForEach(Array(ask.questions.enumerated()), id: \.offset) { _, question in
-                VStack(alignment: .leading, spacing: 7) {
+                VStack(alignment: .leading, spacing: 8) {
                     if !question.header.isEmpty {
-                        Text(question.header.uppercased())
-                            .font(.system(size: 10, weight: .semibold))
-                            .tracking(0.6)
+                        Text(question.header)
+                            .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(Theme.dim2)
                     }
                     Text(question.question)
-                        .font(.system(size: 14))
+                        .font(.system(size: 15))
                         .lineSpacing(2)
                         .foregroundStyle(Theme.fg)
-                    ForEach(Array(question.options.enumerated()), id: \.offset) { _, option in
-                        HStack(alignment: .top, spacing: 8) {
-                            Image(systemName: question.multiSelect ? "square" : "circle")
-                                .font(.system(size: 10))
-                                .foregroundStyle(Theme.dim2)
-                                .padding(.top, 3)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(option.label)
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(Theme.fgSoft)
-                                if !option.description.isEmpty {
-                                    Text(option.description)
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(Theme.dim2)
+                    VStack(spacing: 1) {
+                        ForEach(Array(question.options.enumerated()), id: \.offset) { _, option in
+                            HStack(alignment: .top, spacing: 9) {
+                                Image(systemName: question.multiSelect ? "square" : "circle")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(Theme.dim2)
+                                    .padding(.top, 3)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(option.label)
+                                        .font(.system(size: 13.5))
+                                        .foregroundStyle(Theme.fgSoft)
+                                    if !option.description.isEmpty {
+                                        Text(option.description)
+                                            .font(.system(size: 11.5))
+                                            .foregroundStyle(Theme.dim2)
+                                    }
                                 }
+                                Spacer(minLength: 0)
                             }
-                            Spacer(minLength: 0)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 9)
+                            .background(Theme.layer1)
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(Theme.layer2.opacity(0.55), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
             }
 
             if item.status == "run" {
-                Text("在电脑上选择后，这里会自动更新")
-                    .font(.system(size: 10.5))
+                Text("在电脑上选择后会自动更新")
+                    .font(.system(size: 11))
                     .foregroundStyle(Theme.dim2)
             } else if let result = item.result, !result.isEmpty {
-                Rectangle().fill(Theme.line).frame(height: 1)
                 Text(result)
                     .font(.system(size: 11.5))
-                    .foregroundStyle(Theme.dim)
-                    .lineLimit(6)
+                    .foregroundStyle(Theme.dim2)
+                    .lineLimit(4)
             }
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.layer1, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(item.status == "run" ? Theme.warn.opacity(0.35) : Theme.line)
-        )
+        .padding(.vertical, 2)
+    }
+}
+
+// MARK: - Empty
+
+struct EmptyStateView: View {
+    @State private var float = false
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Image(uiImage: UIImage(named: "brand") ?? UIImage())
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .offset(y: float ? -4 : 0)
+                .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: float)
+            Text("开始对话")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Theme.fg)
+            Text("在手机上继续你的 Harness 会话")
+                .font(.system(size: 12.5))
+                .foregroundStyle(Theme.dim2)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 80)
+        .onAppear { float = true }
     }
 }

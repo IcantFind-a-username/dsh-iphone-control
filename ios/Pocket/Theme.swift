@@ -15,22 +15,28 @@ extension Color {
 }
 
 enum Theme {
-    // --dsw-static-neutral-bluish-950 / 875 / 850 / 800
-    static let bg = Color(hex: 0x151517)
-    static let layer1 = Color(hex: 0x232324)
-    static let layer2 = Color(hex: 0x2C2C2E)
-    static let layer3 = Color(hex: 0x38383A)
+    // three surfaces, no borders — depth comes from tone, not strokes
+    static let bg = Color(hex: 0x0F0F10)
+    static let layer1 = Color(hex: 0x171719)
+    static let layer2 = Color(hex: 0x1F1F22)
+    static let layer3 = Color(hex: 0x2A2A2D)
 
-    // labels
-    static let fg = Color(hex: 0xF9FAFB)        // label-primary  (50)
-    static let fgSoft = Color(hex: 0xCFD3D6)    // label-secondary (300)
-    static let dim = Color(hex: 0xADB2B8)       // label-tertiary (400)
-    static let dim2 = Color(hex: 0x81858C)      // (600)
+    // labels: three levels only
+    static let fg = Color(hex: 0xF5F5F7)
+    static let fgSoft = Color(hex: 0xC7C7CC)
+    static let dim = Color(hex: 0xA1A1A6)
+    static let dim2 = Color(hex: 0x6E6E73)
 
-    // borders
-    static let line = Color.white.opacity(0.06)
-    static let lineStrong = Color.white.opacity(0.12)
-    static let lineEmphasis = Color.white.opacity(0.16)
+    // kept for the few places that still need a hairline
+    static let line = Color.white.opacity(0.05)
+    static let lineStrong = Color.white.opacity(0.09)
+    static let lineEmphasis = Color.white.opacity(0.14)
+
+    // metrics
+    static let gap: CGFloat = 8
+    static let gutter: CGFloat = 20
+    static let cardRadius: CGFloat = 16
+    static let controlRadius: CGFloat = 12
 
     // accent + status
     static let accent = Color(hex: 0x3B82F6)

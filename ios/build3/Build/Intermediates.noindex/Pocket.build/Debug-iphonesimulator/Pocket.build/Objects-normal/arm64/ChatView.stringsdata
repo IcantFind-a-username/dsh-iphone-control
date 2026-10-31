@@ -7,7 +7,7 @@
         "key": "正在加载…",
         "location": {
           "startingColumn": 59,
-          "startingLine": 83
+          "startingLine": 88
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "加载更早的消息",
         "location": {
           "startingColumn": 79,
-          "startingLine": 83
+          "startingLine": 88
         }
       },
       {
@@ -23,7 +23,23 @@
         "key": "最新",
         "location": {
           "startingColumn": 34,
-          "startingLine": 140
+          "startingLine": 145
+        }
+      },
+      {
+        "comment": "",
+        "key": "·",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 196
+        }
+      },
+      {
+        "comment": "",
+        "key": "·",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 199
         }
       },
       {
@@ -31,7 +47,7 @@
         "key": "%lld%%",
         "location": {
           "startingColumn": 30,
-          "startingLine": 234
+          "startingLine": 200
         }
       },
       {
@@ -39,7 +55,7 @@
         "key": "插话…",
         "location": {
           "startingColumn": 43,
-          "startingLine": 254
+          "startingLine": 227
         }
       },
       {
@@ -47,7 +63,7 @@
         "key": "发消息…",
         "location": {
           "startingColumn": 57,
-          "startingLine": 254
+          "startingLine": 227
         }
       },
       {
@@ -55,7 +71,7 @@
         "key": "连不上电脑",
         "location": {
           "startingColumn": 26,
-          "startingLine": 408
+          "startingLine": 380
         }
       },
       {
@@ -63,7 +79,7 @@
         "key": "先在 Safari 里打开同一地址：能打开就是 App 权限问题（设置 → 隐私与安全性 → 本地网络 → 打开 Pocket），打不开就是手机没连上 Tailscale。",
         "location": {
           "startingColumn": 26,
-          "startingLine": 419
+          "startingLine": 391
         }
       },
       {
@@ -71,7 +87,7 @@
         "key": "重试",
         "location": {
           "startingColumn": 28,
-          "startingLine": 426
+          "startingLine": 398
         }
       },
       {
@@ -79,7 +95,7 @@
         "key": "设置",
         "location": {
           "startingColumn": 28,
-          "startingLine": 431
+          "startingLine": 403
         }
       },
       {
@@ -87,7 +103,7 @@
         "key": "Safari",
         "location": {
           "startingColumn": 28,
-          "startingLine": 434
+          "startingLine": 406
         }
       }
     ]

@@ -12,6 +12,7 @@ struct ChatView: View {
     @State private var showWhale = ProcessInfo.processInfo.arguments.contains("-whale")
     @State private var showModels = ProcessInfo.processInfo.arguments.contains("-models")
     @State private var showPermissions = ProcessInfo.processInfo.arguments.contains("-permissions")
+    @State private var showSessionSettings = false
     @State private var showJump = false
     @State private var scrollTick = 0
     @State private var scrollPosition = ScrollPosition(edge: .bottom)
@@ -54,6 +55,10 @@ struct ChatView: View {
                 ModelSheet()
                     .environmentObject(model)
             }
+            .sheet(isPresented: $showSessionSettings) {
+                SessionSheet()
+                    .environmentObject(model)
+            }
             .sheet(isPresented: $showPermissions) {
                 PermissionSheet()
                     .environmentObject(model)
@@ -73,7 +78,7 @@ struct ChatView: View {
 
     private var transcript: some View {
         ScrollView {
-                LazyVStack(alignment: .leading, spacing: 16) {
+                LazyVStack(alignment: .leading, spacing: 22) {
                     if model.hasMore {
                         Button {
                             Task { await model.loadOlder() }
@@ -113,8 +118,8 @@ struct ChatView: View {
                         .frame(height: 1)
                         .id("bottom")
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
                 .padding(.bottom, 10)
             }
             .scrollPosition($scrollPosition)
@@ -182,63 +187,31 @@ struct ChatView: View {
 
     private var composer: some View {
         VStack(spacing: 8) {
-            HStack {
-                Button {
-                    Haptics.tap()
-                    showModels = true
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: "cpu")
-                            .font(.system(size: 9.5, weight: .semibold))
-                        Text(model.currentModelLabel)
-                            .font(.system(size: 11.5, weight: .medium))
-                            .lineLimit(1)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 7.5, weight: .bold))
-                    }
-                    .foregroundStyle(Theme.dim)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Theme.layer1, in: Capsule())
-                    .overlay(Capsule().strokeBorder(Theme.line))
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    Haptics.tap()
-                    showPermissions = true
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "lock.shield")
-                            .font(.system(size: 9.5, weight: .semibold))
-                        Text(model.currentPermissionLabel)
-                            .font(.system(size: 11.5, weight: .medium))
-                            .lineLimit(1)
-                    }
-                    .foregroundStyle(Theme.dim)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Theme.layer1, in: Capsule())
-                    .overlay(Capsule().strokeBorder(Theme.line))
-                }
-                .buttonStyle(.plain)
-
-                Spacer(minLength: 0)
-
-                if let context = model.context, let ratio = context.ratio, (context.window ?? 0) > 0 {
-                    HStack(spacing: 5) {
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Theme.layer2).frame(width: 34, height: 3)
-                            Capsule().fill(contextColor(ratio)).frame(width: max(2, 34 * ratio), height: 3)
-                        }
+            Button {
+                Haptics.tap()
+                showSessionSettings = true
+            } label: {
+                HStack(spacing: 6) {
+                    Text(model.currentModelLabel)
+                    Text("·")
+                    Text(model.currentPermissionLabel)
+                    if let context = model.context, let ratio = context.ratio, (context.window ?? 0) > 0 {
+                        Text("·")
                         Text("\(Int((ratio * 100).rounded()))%")
-                            .font(.system(size: 10.5, weight: .medium, design: .rounded))
-                            .monospacedDigit()
                             .foregroundStyle(contextColor(ratio))
                     }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 8, weight: .semibold))
+                        .foregroundStyle(Theme.dim2)
                 }
+                .font(.system(size: 11.5))
+                .foregroundStyle(Theme.dim2)
+                .padding(.horizontal, 6)
+                .padding(.bottom, 2)
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, 4)
+            .buttonStyle(.plain)
 
             if !images.isEmpty { previews }
 
@@ -308,8 +281,7 @@ struct ChatView: View {
             LinearGradient(
                 stops: [
                     .init(color: Theme.bg.opacity(0), location: 0),
-                    .init(color: Theme.bg.opacity(0.92), location: 0.10),
-                    .init(color: Theme.bg, location: 0.26)
+                    .init(color: Theme.bg, location: 0.16)
                 ],
                 startPoint: .top,
                 endPoint: .bottom

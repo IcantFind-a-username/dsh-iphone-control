@@ -7,7 +7,7 @@
         "key": "照片",
         "location": {
           "startingColumn": 42,
-          "startingLine": 40
+          "startingLine": 42
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "照片 ×%lld",
         "location": {
           "startingColumn": 26,
-          "startingLine": 78
+          "startingLine": 76
         }
       },
       {
@@ -23,7 +23,39 @@
         "key": "复制全文",
         "location": {
           "startingColumn": 35,
-          "startingLine": 114
+          "startingLine": 110
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ tok",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 128
+        }
+      },
+      {
+        "comment": "",
+        "key": "· %@ tok/s",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 131
+        }
+      },
+      {
+        "comment": "",
+        "key": "· 缓存 %lld%%",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 134
+        }
+      },
+      {
+        "comment": "",
+        "key": "· %@s",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 137
         }
       },
       {
@@ -31,7 +63,7 @@
         "key": "正在思考",
         "location": {
           "startingColumn": 30,
-          "startingLine": 172
+          "startingLine": 160
         }
       },
       {
@@ -39,39 +71,23 @@
         "key": "思考中",
         "location": {
           "startingColumn": 38,
-          "startingLine": 205
+          "startingLine": 193
         }
       },
       {
         "comment": "",
-        "key": "思考过程",
+        "key": "思考",
         "location": {
           "startingColumn": 52,
-          "startingLine": 205
+          "startingLine": 193
         }
       },
       {
         "comment": "",
-        "key": "开始对话",
-        "location": {
-          "startingColumn": 18,
-          "startingLine": 334
-        }
-      },
-      {
-        "comment": "",
-        "key": "在手机上继续你的 Harness 会话",
-        "location": {
-          "startingColumn": 18,
-          "startingLine": 338
-        }
-      },
-      {
-        "comment": "",
-        "key": "在电脑上选择后，这里会自动更新",
+        "key": "在电脑上选择后会自动更新",
         "location": {
           "startingColumn": 22,
-          "startingLine": 406
+          "startingLine": 353
         }
       },
       {
@@ -79,7 +95,7 @@
         "key": "需要你回答",
         "location": {
           "startingColumn": 22,
-          "startingLine": 357
+          "startingLine": 302
         }
       },
       {
@@ -87,7 +103,23 @@
         "key": "等待中",
         "location": {
           "startingColumn": 26,
-          "startingLine": 361
+          "startingLine": 306
+        }
+      },
+      {
+        "comment": "",
+        "key": "开始对话",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 381
+        }
+      },
+      {
+        "comment": "",
+        "key": "在手机上继续你的 Harness 会话",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 384
         }
       }
     ]

@@ -89,7 +89,7 @@ struct WhalePet: View {
                         .scaledToFit()
                 }
             }
-            .frame(width: 76, height: 76)
+            .frame(width: 64, height: 64)
             .offset(y: bob ? -3 : 0)
             .opacity(appeared ? 1 : 0)
             .scaleEffect(appeared ? 1 : 0.7, anchor: .bottomTrailing)
@@ -116,8 +116,9 @@ struct WhalePet: View {
                 )
         }
         .offset(drag)
-        .padding(.trailing, 10)
-        .padding(.bottom, 4)
+        .padding(.trailing, 12)
+        .padding(.bottom, 2)
+        .opacity(0.94)
         .onAppear {
             withAnimation(.spring(response: 0.55, dampingFraction: 0.72)) { appeared = true }
             withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) { bob = true }

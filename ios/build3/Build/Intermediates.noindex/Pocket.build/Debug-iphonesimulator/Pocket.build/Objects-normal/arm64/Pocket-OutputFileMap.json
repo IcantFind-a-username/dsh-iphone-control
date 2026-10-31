@@ -116,6 +116,16 @@
     "swift-dependencies" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/PocketApp.swiftdeps",
     "swiftmodule" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/PocketApp~partial.swiftmodule"
   },
+  "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/Pocket/SessionSheet.swift" : {
+    "const-values" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/SessionSheet.swiftconstvalues",
+    "dependencies" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/SessionSheet.d",
+    "diagnostics" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/SessionSheet.dia",
+    "index-unit-output-path" : "/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/SessionSheet.o",
+    "llvm-bc" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/SessionSheet.bc",
+    "object" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/SessionSheet.o",
+    "swift-dependencies" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/SessionSheet.swiftdeps",
+    "swiftmodule" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/SessionSheet~partial.swiftmodule"
+  },
   "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/Pocket/SetupView.swift" : {
     "const-values" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/SetupView.swiftconstvalues",
     "dependencies" : "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/build3/Build/Intermediates.noindex/Pocket.build/Debug-iphonesimulator/Pocket.build/Objects-normal/arm64/SetupView.d",
