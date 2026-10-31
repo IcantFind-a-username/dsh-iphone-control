@@ -176,6 +176,18 @@ docs/               截图
 
 `blockedModels: []` 关闭限制；改完重启 DSH 生效。
 
+## 出门用（公网入口）
+
+`scripts/pocket-gate.mjs` 是一个只放行 `/pocket/*` 的反向代理，配合 Funnel 使用时
+`/`、`/api` 等路由在公网上不可达：
+
+```sh
+node scripts/pocket-gate.mjs &                 # 127.0.0.1:64045 -> 127.0.0.1:64044
+tailscale funnel --bg --https=443 http://127.0.0.1:64045
+```
+
+关掉公网入口：`tailscale funnel --https=443 off`。
+
 ## 两步验证（TOTP）
 
 在 Mac 上打开 `http://127.0.0.1:64044/pocket/setup`（仅回环可访问），把页面上的密钥加进 Authenticator。
