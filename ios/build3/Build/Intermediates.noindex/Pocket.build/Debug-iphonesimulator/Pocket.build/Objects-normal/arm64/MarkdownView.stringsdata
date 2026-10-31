@@ -1,0 +1,40 @@
+{
+  "source": "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/Pocket/MarkdownView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "•",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 179
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld.",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 193
+        }
+      },
+      {
+        "comment": "",
+        "key": "已复制",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 244
+        }
+      },
+      {
+        "comment": "",
+        "key": "复制",
+        "location": {
+          "startingColumn": 53,
+          "startingLine": 244
+        }
+      }
+    ]
+  },
+  "version": 1
+}

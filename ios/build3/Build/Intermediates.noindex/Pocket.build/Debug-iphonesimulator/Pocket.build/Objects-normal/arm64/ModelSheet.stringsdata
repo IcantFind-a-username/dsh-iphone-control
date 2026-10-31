@@ -1,0 +1,40 @@
+{
+  "source": "/Users/franz/Documents/deepseek-harness/default-workspace/pocket/ios/Pocket/ModelSheet.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "模型",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 41
+        }
+      },
+      {
+        "comment": "",
+        "key": "没有可用模型",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 30
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@：%@",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 20
+        }
+      },
+      {
+        "comment": "",
+        "key": "完成",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 48
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -374,6 +374,31 @@ final class AppModel: ObservableObject {
         return permissionLabel(value)
     }
 
+    @discardableResult
+    func deleteSession(_ id: String) async -> Bool {
+        guard let api else { return false }
+        do {
+            let response: SimpleResponse = try await api.post("api/delete-session", json: ["id": id])
+            if response.ok {
+                sessions.removeAll { $0.id == id }
+                if sessionId == id {
+                    if let next = sessions.first {
+                        await open(next.id)
+                    } else {
+                        await newSession()
+                    }
+                }
+                Haptics.tap()
+                flash("会话已删除")
+                return true
+            }
+            flash(response.error ?? "删除失败")
+        } catch {
+            flash(error.localizedDescription)
+        }
+        return false
+    }
+
     func loadModels() async {
         guard let api else { return }
         modelLoading = true

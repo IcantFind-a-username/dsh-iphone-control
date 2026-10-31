@@ -1046,6 +1046,35 @@ code{display:block;font-family:ui-monospace,Menlo,monospace;font-size:17px;lette
         return sendJson(res, 200, { ok: true })
       }
 
+      if (api === 'delete-session' && method === 'POST') {
+        const body = await readBody(req, 4096)
+        const id = typeof body.id === 'string' ? body.id : ''
+        if (!id) return sendJson(res, 400, { ok: false, error: 'missing id' })
+        if (ctx.sessions.get(id)) {
+          return sendJson(res, 409, { ok: false, error: '这个会话还开着：先在电脑上关掉或重启 DSH，再来删' })
+        }
+        const root = path.join(homeDir(), 'sessions')
+        let removed = false
+        try {
+          for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+            if (!entry.isDirectory()) continue
+            const dir = path.join(root, entry.name, id)
+            if (fs.existsSync(dir)) {
+              fs.rmSync(dir, { recursive: true, force: true })
+              removed = true
+            }
+          }
+        } catch (error) {
+          return sendJson(res, 500, { ok: false, error: String((error && error.message) || error) })
+        }
+        const feed = feeds.get(id)
+        if (feed) {
+          feed.stop()
+          feeds.delete(id)
+        }
+        return sendJson(res, 200, { ok: true, removed })
+      }
+
       if (api === 'permissions' && method === 'GET') {
         const id = url.searchParams.get('id') || ''
         const permissions = ctx.get('permissionPresets')

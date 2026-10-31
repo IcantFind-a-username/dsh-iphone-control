@@ -8,6 +8,8 @@ struct SidebarView: View {
     var onClose: () -> Void
     var onSettings: () -> Void
 
+    @State private var pendingDelete: PocketSession?
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
@@ -26,6 +28,24 @@ struct SidebarView: View {
         }
         .ignoresSafeArea()
         .task { await model.loadSessions() }
+        .confirmationDialog(
+            "删除「\(pendingDelete?.name ?? "")」？",
+            isPresented: Binding(
+                get: { pendingDelete != nil },
+                set: { if !$0 { pendingDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("删除", role: .destructive) {
+                if let target = pendingDelete {
+                    Task { await model.deleteSession(target.id) }
+                }
+                pendingDelete = nil
+            }
+            Button("取消", role: .cancel) { pendingDelete = nil }
+        } message: {
+            Text("只删除这台 Mac 上的会话记录，不可恢复。")
+        }
     }
 
     private var header: some View {
@@ -128,6 +148,13 @@ struct SidebarView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button(role: .destructive) {
+                pendingDelete = session
+            } label: {
+                Label("删除会话", systemImage: "trash")
+            }
+        }
     }
 
     private var footer: some View {
