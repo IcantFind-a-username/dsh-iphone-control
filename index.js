@@ -54,6 +54,18 @@ function loadState() {
     if (parsed && typeof parsed.token === 'string' && parsed.token.length >= 16) {
       if (!('totp' in parsed)) parsed.totp = null
       if (!parsed.devices || typeof parsed.devices !== 'object') parsed.devices = {}
+      // Older builds keyed devices by the token hash itself; move them to the
+      // id-keyed shape so their token keeps working.
+      let migrated = false
+      for (const [key, value] of Object.entries(parsed.devices)) {
+        if (/^[0-9a-f]{64}$/.test(key) && value && typeof value === 'object') {
+          const id = crypto.randomBytes(12).toString('hex')
+          parsed.devices[id] = { ...value, tokenHash: key }
+          delete parsed.devices[key]
+          migrated = true
+        }
+      }
+      if (migrated) saveState(parsed)
       return parsed
     }
   } catch {
