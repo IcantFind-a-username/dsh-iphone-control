@@ -579,6 +579,28 @@ function verifyTotp(secret, code) {
   return false
 }
 
+function hiddenFile() {
+  return path.join(homeDir(), 'pocket', 'hidden.json')
+}
+
+function loadHidden() {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(hiddenFile(), 'utf8'))
+    return new Set(Array.isArray(parsed.ids) ? parsed.ids : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function saveHidden(ids) {
+  try {
+    fs.mkdirSync(path.dirname(hiddenFile()), { recursive: true, mode: 0o700 })
+    fs.writeFileSync(hiddenFile(), JSON.stringify({ ids: [...ids] }, null, 2), { mode: 0o600 })
+  } catch {
+    /* best effort */
+  }
+}
+
 function deviceKey(token) {
   return crypto.createHash('sha256').update(String(token)).digest('hex')
 }
@@ -680,6 +702,7 @@ export function apply(ctx, config) {
   const cfg = config && typeof config === 'object' ? config : {}
   const state = loadState()
   const digest = tokenDigest(state.token)
+  const hidden = loadHidden()
   const feeds = new Map()
 
   const isLoopback = (req) => {
@@ -919,6 +942,7 @@ code{display:block;font-family:ui-monospace,Menlo,monospace;font-size:17px;lette
             blank: item.blank === true
           }))
           .filter((item) => {
+            if (hidden.has(item.id)) return false
             // A session whose log file disappeared cannot accept writes any more.
             // Very fresh sessions may not have flushed their log yet, so keep those.
             if (Date.now() - item.updatedAt < 60_000) return true
@@ -1050,8 +1074,10 @@ code{display:block;font-family:ui-monospace,Menlo,monospace;font-size:17px;lette
         const body = await readBody(req, 4096)
         const id = typeof body.id === 'string' ? body.id : ''
         if (!id) return sendJson(res, 400, { ok: false, error: 'missing id' })
-        if (ctx.sessions.get(id)) {
-          return sendJson(res, 409, { ok: false, error: '这个会话还开着：先在电脑上关掉或重启 DSH，再来删' })
+        if (ctx.sessions.get(id) || ctx.agents.get(id)) {
+          hidden.add(id)
+          saveHidden(hidden)
+          return sendJson(res, 200, { ok: true, removed: false, hidden: true })
         }
         const root = path.join(homeDir(), 'sessions')
         let removed = false

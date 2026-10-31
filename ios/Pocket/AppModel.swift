@@ -389,7 +389,7 @@ final class AppModel: ObservableObject {
                     }
                 }
                 Haptics.tap()
-                flash("会话已删除")
+                flash(response.hidden == true ? "已从手机移除（电脑上还在运行）" : "会话已删除")
                 return true
             }
             flash(response.error ?? "删除失败")

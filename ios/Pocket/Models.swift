@@ -124,6 +124,7 @@ struct SendResponse: Codable {
 struct SimpleResponse: Codable {
     var ok: Bool
     var error: String?
+    var hidden: Bool?
 }
 
 struct WhaleEvent: Codable, Identifiable, Equatable {
